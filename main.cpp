@@ -341,7 +341,7 @@ Settings read_settings(const std::string& filename)
 bool intersection_sphere(Sphere& s, const Ray& r, glm::vec3& intersection_point)
 {
   glm::vec3 orig = glm::inverse(s.transform) * glm::vec4(r.orig, 1.0f);
-  glm::vec3 dir = glm::normalize(glm::inverse(s.transform) * glm::vec4(r.dir, 1.0f));
+  glm::vec3 dir = glm::normalize(glm::inverse(s.transform) * glm::vec4(r.dir, 0.0f));
 
   //solve t * t * (r.dir * r.dir) + 2 * t * r.dir * (r.orig - i.pos) + (r.orig - i.pos) * (r.orig - i.pos) - i.radius^2 = 0;
   float a = glm::dot(dir, dir);
