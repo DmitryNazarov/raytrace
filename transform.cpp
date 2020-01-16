@@ -115,7 +115,6 @@ glm::vec3 Transform::upvector(const glm::vec3 &up, const glm::vec3 & zvec)
     return ret; 
 }
 
-
 Transform::Transform()
 {
 

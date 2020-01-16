@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/RayTracer",
             "args": [
-                "/home/dev/Work/github/testscenes/scene00.test"
+                "/home/dev/Work/github/RayTracer/testscenes/scene0.test"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",

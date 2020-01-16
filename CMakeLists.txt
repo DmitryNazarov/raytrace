@@ -11,7 +11,7 @@ ENDIF()
 IF (WIN32)
   find_package(SFML COMPONENTS main graphics system REQUIRED)
 ELSE()
-  find_package(SFML COMPONENTS graphics system REQUIRED)
+  find_package(SFML COMPONENTS graphics system window REQUIRED)
 ENDIF()
 
 find_package(Threads)
@@ -21,14 +21,14 @@ set(SOURCE
 	main.cpp
 )
 
-add_executable(${PROJECT_NAME} ${SOURCE})
+add_executable(${PROJECT_NAME} WIN32 ${SOURCE})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${GLM_INCLUDE_DIR})
 
 IF (WIN32)
   target_link_libraries(${PROJECT_NAME} PUBLIC sfml-main sfml-graphics sfml-system)
 ELSE()
-  target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads sfml-graphics sfml-system)
+  target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads sfml-graphics sfml-system sfml-window)
 ENDIF()
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)

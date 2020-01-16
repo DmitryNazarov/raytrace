@@ -1,6 +1,24 @@
 #include "main.h"
 
-glm::mat4 view, projection;
+void debugMAT(const glm::mat4 &t)
+{
+  std::cout << "T:" << std::setw(4) << t[0][0] << " " 
+  << std::setw(4) << t[1][0] << " " 
+  << std::setw(4) << t[2][0] << " " 
+  << std::setw(4) << t[3][0]<< std::endl;
+  std::cout << "T:" << std::setw(4) << t[0][1] << " " 
+  << std::setw(4) << t[1][1] << " " 
+  << std::setw(4) << t[2][1] << " " 
+  << std::setw(4) << t[3][1]<< std::endl;
+  std::cout << "T:" << std::setw(4) << t[0][2] << " "
+  << std::setw(4) << t[1][2] << " "
+  << std::setw(4) << t[2][2] << " "
+  << std::setw(4) << t[3][2]<< std::endl;
+  std::cout << "T:" << std::setw(4) << t[0][3] << " "
+  << std::setw(4) << t[1][3] << " "
+  << std::setw(4) << t[2][3] << " "
+  << std::setw(4) << t[3][3]<< std::endl;
+}
 
 Render::Render(const Settings &s) : s(s)
 {
@@ -63,7 +81,7 @@ Settings read_settings(const std::string& filename)
     return settings;
 
   std::stack<glm::mat4> transfstack;
-  transfstack.push(glm::mat4(1.0));  // identity
+  transfstack.emplace(1.0);  // identity
 
   while (getline(in, str))
   {
@@ -194,9 +212,9 @@ Settings read_settings(const std::string& filename)
       if (readvals(ss, 3, values))
       {
         Triangle t;
-        t.vertices.push_back(vertices[values[0]]);
-        t.vertices.push_back(vertices[values[1]]);
-        t.vertices.push_back(vertices[values[2]]);
+        t.vertices.push_back(t.transform * glm::vec4(vertices[values[0]], 1.0f));
+        t.vertices.push_back(t.transform * glm::vec4(vertices[values[1]], 1.0f));
+        t.vertices.push_back(t.transform * glm::vec4(vertices[values[2]], 1.0f));
         t.transform = transfstack.top();
 
         t.normal = glm::normalize(glm::cross(t.vertices[1] - t.vertices[0], t.vertices[2] - t.vertices[0]));
@@ -322,56 +340,13 @@ Settings read_settings(const std::string& filename)
 
 bool intersection_sphere(Sphere& s, const Ray& r, glm::vec3& intersection_point)
 {
-  Ray new_r = r;
-  //new_r.dir = glm::mat3(glm::transpose(glm::inverse(s.transform))) * new_r.dir;
-  //new_r.dir = glm::mat3(glm::inverse(glm::mat3(s.transform))) * new_r.dir;
-
-  //new_r.orig = glm::inverse(s.transform) * glm::vec4(new_r.orig, 1.0f);
-  //new_r.dir = glm::inverse(s.transform) * glm::vec4(new_r.dir, 1.0f);
-
-  //s.pos = s.transform * glm::vec4(s.pos, 1.0f);
-
-  //new_r.orig = s.transform * glm::vec4(new_r.orig, 1.0f);
-  //new_r.dir = s.transform * glm::vec4(new_r.dir, 1.0f);
-
-  //new_r.orig = glm::inverse(glm::mat3(s.transform)) * new_r.orig;
-  //new_r.dir = glm::inverse(glm::mat3(s.transform)) * new_r.dir;
-
-  new_r.orig = glm::inverse(s.transform) * glm::vec4(new_r.orig, 1.0f);
-  new_r.dir = glm::inverse(s.transform) * glm::vec4(new_r.dir, 1.0f);;
-
-  //glm::vec4 o = glm::inverse(s.transform) * glm::vec4(new_r.orig, 1.0f);
-  //new_r.orig = o / o.w;
-  //glm::vec4 dir = glm::inverse(s.transform) * glm::vec4(new_r.dir, 1.0f);
-  //new_r.dir = dir / dir.w;
-
-  auto tran = Transform::translate(0, 0, 0.5);
-  auto rot = Transform::rotate(45, glm::vec3(0.0f, 0.0f, 1.0f));
-  auto scal = Transform::scale(1.0f, 0.25f, 0.25f);
-
-  auto trani = glm::inverse(glm::mat3(tran));
-  auto roti = glm::inverse(glm::mat3(rot));
-  auto scali = glm::inverse(glm::mat3(scal));
-
-  //new_r.orig = tran * glm::mat4(rot) * scal * glm::vec4(new_r.orig, 1.0f);
-  //new_r.dir = tran * glm::mat4(rot) * scal * glm::vec4(new_r.dir, 1.0f);
-
-  //new_r.orig = trani * glm::mat4(roti) * scali * glm::vec4(new_r.orig, 1.0f);
-  //new_r.dir = trani * glm::mat4(roti) * scali * glm::vec4(new_r.dir, 1.0f);
-
-  //new_r.orig = scali * glm::mat4(roti) *  trani * glm::vec4(new_r.orig, 1.0f);
-  //new_r.dir = scali  * glm::mat4(roti) * trani * glm::vec4(new_r.dir, 1.0f);
-
-  //new_r.orig = scali * roti * trani * glm::vec4(new_r.orig, 1.0f);
-  //new_r.dir = scali * roti * trani * glm::vec4(new_r.dir, 1.0f);
-
-  //new_r.orig = Transform::translate(0, 0, 0.5) * glm::vec4(glm::inverse(glm::mat3(s.transform)) * new_r.orig, 1.0f);
-  //new_r.dir = Transform::translate(0, 0, 0.5) * glm::vec4(glm::inverse(glm::mat3(s.transform)) * new_r.dir, 1.0f);
+  glm::vec3 orig = glm::inverse(s.transform) * glm::vec4(r.orig, 1.0f);
+  glm::vec3 dir = glm::normalize(glm::inverse(s.transform) * glm::vec4(r.dir, 1.0f));
 
   //solve t * t * (r.dir * r.dir) + 2 * t * r.dir * (r.orig - i.pos) + (r.orig - i.pos) * (r.orig - i.pos) - i.radius^2 = 0;
-  float a = glm::dot(new_r.dir, new_r.dir);
-  float b = 2 * glm::dot(new_r.dir, (new_r.orig - s.pos));
-  float c = glm::dot((new_r.orig - s.pos), (new_r.orig - s.pos)) - s.radius * s.radius;
+  float a = glm::dot(dir, dir);
+  float b = 2 * glm::dot(dir, (orig - s.pos));
+  float c = glm::dot((orig - s.pos), (orig - s.pos)) - s.radius * s.radius;
   float d = b * b - 4 * a * c;
 
   if (d > 0)
@@ -391,76 +366,22 @@ bool intersection_sphere(Sphere& s, const Ray& r, glm::vec3& intersection_point)
       t = std::min(t1, t2);
     }
 
-    intersection_point = new_r.orig + t * new_r.dir;
-
-    intersection_point = s.transform * glm::vec4(intersection_point, 1.0f);
-
-    //intersection_point = glm::mat3(s.transform) * intersection_point;
+    intersection_point = orig + t * dir;
 
     return true;
   }
   else if (d == 0)
   {
     float t = -b / 2 * a;
-    intersection_point = new_r.orig + t * new_r.dir;
-
-    intersection_point = s.transform * glm::vec4(intersection_point, 1.0f);
-    //glm::vec4 point = s.transform * glm::vec4(intersection_point, 1.0f);
-    //intersection_point = point / point.w;
-
+    intersection_point = orig + t * dir;
     return true;
   }
 
   return false;
 }
 
-bool intersection_sphere0(const Sphere& s, const Ray& r, glm::vec3& intersection_point)
+bool intersection_triangle(const Triangle& tri, const Ray &r, glm::vec3& intersection_point)
 {
-  //solve t * t * (r.dir * r.dir) + 2 * t * r.dir * (r.orig - i.pos) + (r.orig - i.pos) * (r.orig - i.pos) - i.radius = 0;
-  float a = glm::dot(r.dir, r.dir);
-  float b = 2 * glm::dot(r.dir, (r.orig - s.pos));
-  float c = glm::dot((r.orig - s.pos), (r.orig - s.pos)) - s.radius * s.radius;
-  float d = b * b - 4 * a * c;
-
-  if (d > 0)
-  {
-    float sqrt_d = glm::sqrt(d);
-    float t1 = (-b + sqrt_d) / 2 * a;
-    float t2 = (-b - sqrt_d) / 2 * a;
-
-    float t = .0f;
-
-    if (t1 < 0 || t2 < 0)
-    {
-      t = std::max(t1, t2);
-    }
-    else
-    {
-      t = std::min(t1, t2);
-    }
-
-    intersection_point = r.orig + t * r.dir;
-    return true;
-  }
-  else if (d == 0)
-  {
-    float t = -b / 2 * a;
-    intersection_point = r.orig + t * r.dir;
-    return true;
-  }
-
-  return false;
-}
-
-bool intersection_triangle(const Triangle& tri, Ray r, glm::vec3& intersection_point)
-{
-  r.orig = glm::inverse(tri.transform) * glm::vec4(r.orig, 1.0f);
-  r.dir = glm::inverse(tri.transform) * glm::vec4(r.dir, 1.0f);
-  
-  //r.orig = tri.transform * glm::vec4(r.orig, 1.0f);
-  //r.dir = tri.transform * glm::vec4(r.dir, 1.0f);
-  //r.dir = glm::normalize(r.dir);
-
   const glm::vec3& v1 = tri.vertices[0];
   const glm::vec3& v2 = tri.vertices[1];
   const glm::vec3& v3 = tri.vertices[2];
@@ -477,8 +398,6 @@ bool intersection_triangle(const Triangle& tri, Ray r, glm::vec3& intersection_p
   if (t < 0) return false; // the triangle is behind
 
   intersection_point = r.orig + t * r.dir;
-
-  intersection_point = tri.transform * glm::vec4(intersection_point, 1.0f);
 
   // Step 2: inside-outside test
   glm::vec3 edge1 = v2 - v1;
@@ -499,11 +418,8 @@ bool intersection_triangle(const Triangle& tri, Ray r, glm::vec3& intersection_p
   return true;
 }
 
-bool intersection_triangle(const TriangleNormals& tri, Ray r, glm::vec3& intersection_point)
+bool intersection_triangle(const TriangleNormals& tri, const Ray &r, glm::vec3& intersection_point)
 {
-  r.orig = glm::inverse(tri.transform) * glm::vec4(r.orig, 1.0f);
-  r.dir = glm::inverse(tri.transform) * glm::vec4(r.dir, 1.0f);
-
   const glm::vec3& v1 = tri.vertices[0];
   const glm::vec3& v2 = tri.vertices[1];
   const glm::vec3& v3 = tri.vertices[2];
@@ -769,9 +685,8 @@ void Render::raytracer_process()
   float aspect = static_cast<float>(s.width) / static_cast<float>(s.height);
   float znear = 0.1f, zfar = 99.0f;
 
-  projection = glm::perspective(glm::radians(s.fovy), aspect, znear, zfar);
-  view = glm::lookAt(s.eye_init, s.center, s.up_init);
-
+  //projection = glm::perspective(glm::radians(s.fovy), aspect, znear, zfar);
+  //view = glm::lookAt(s.eye_init, s.center, s.up_init);
   //glm::mat4 projection = Transform::perspective(glm::radians(s.fovy), aspect, znear, zfar);
   //view = Transform::lookAt(s.eye_init, s.center, s.up_init);
 
@@ -874,8 +789,6 @@ int main(int argc, char* argv[])
   try
   {
     Render r(read_settings(argv[1]));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\testscenes\\scene0.test"));
-    //Render r(read_settings("/home/dev/Work/github/testscenes/scene000.test"));
     r.start_raytrace();
     r.update();
   }
