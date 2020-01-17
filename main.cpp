@@ -136,6 +136,7 @@ Settings read_settings(const std::string& filename)
         s.radius = values[3];
         s.pos = glm::vec3(values[0], values[1], values[2]);
         s.transform = transfstack.top();
+        s.inverted_transform = glm::inverse(transfstack.top());
         s.material.ambient = ambient;
         s.material.diffuse = diffuse;
         s.material.specular = specular;
@@ -215,6 +216,9 @@ Settings read_settings(const std::string& filename)
         t.vertices.push_back(t.transform * glm::vec4(vertices[values[0]], 1.0f));
         t.vertices.push_back(t.transform * glm::vec4(vertices[values[1]], 1.0f));
         t.vertices.push_back(t.transform * glm::vec4(vertices[values[2]], 1.0f));
+        // t.vertices.push_back(glm::vec3(vertices[values[0]]));
+        // t.vertices.push_back(glm::vec3(vertices[values[1]]));
+        // t.vertices.push_back(glm::vec3(vertices[values[2]]));
         t.transform = transfstack.top();
 
         t.normal = glm::normalize(glm::cross(t.vertices[1] - t.vertices[0], t.vertices[2] - t.vertices[0]));
@@ -340,8 +344,8 @@ Settings read_settings(const std::string& filename)
 
 bool intersection_sphere(Sphere& s, const Ray& r, glm::vec3& intersection_point)
 {
-  glm::vec3 orig = glm::inverse(s.transform) * glm::vec4(r.orig, 1.0f);
-  glm::vec3 dir = glm::normalize(glm::inverse(s.transform) * glm::vec4(r.dir, 0.0f));
+  glm::vec3 orig = s.inverted_transform * glm::vec4(r.orig, 1.0f);
+  glm::vec3 dir = glm::normalize(s.inverted_transform * glm::vec4(r.dir, 0.0f));
 
   //solve t * t * (r.dir * r.dir) + 2 * t * r.dir * (r.orig - i.pos) + (r.orig - i.pos) * (r.orig - i.pos) - i.radius^2 = 0;
   float a = glm::dot(dir, dir);

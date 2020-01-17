@@ -34,7 +34,7 @@ struct Sphere {
   float radius;
   glm::vec3 pos;
   Material material;
-  glm::mat4 transform;
+  glm::mat4 transform, inverted_transform;
 };
 
 struct Triangle
