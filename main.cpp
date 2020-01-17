@@ -342,7 +342,7 @@ Settings read_settings(const std::string& filename)
   return settings;
 }
 
-bool intersection_sphere(Sphere& s, const Ray& r, glm::vec3& intersection_point)
+bool intersection_sphere(Sphere& s, const Ray& r, float& dist)
 {
   glm::vec3 orig = s.inverted_transform * glm::vec4(r.orig, 1.0f);
   glm::vec3 dir = glm::normalize(s.inverted_transform * glm::vec4(r.dir, 0.0f));
@@ -370,21 +370,27 @@ bool intersection_sphere(Sphere& s, const Ray& r, glm::vec3& intersection_point)
       t = std::min(t1, t2);
     }
 
-    intersection_point = orig + t * dir;
+    glm::vec3 intersection_point = orig + t * dir;
+    glm::vec3 trans_point = s.transform * glm::vec4(intersection_point, 1.0f);
+    dist = glm::length(trans_point - r.orig);
 
     return true;
   }
   else if (d == 0)
   {
     float t = -b / 2 * a;
-    intersection_point = orig + t * dir;
+
+    glm::vec3 intersection_point = orig + t * dir;
+    glm::vec3 trans_point = s.transform * glm::vec4(intersection_point, 1.0f);
+    dist = glm::length(trans_point - r.orig);
+
     return true;
   }
 
   return false;
 }
 
-bool intersection_triangle(const Triangle& tri, const Ray &r, glm::vec3& intersection_point)
+bool intersection_triangle(const Triangle& tri, const Ray &r, float& dist)
 {
   const glm::vec3& v1 = tri.vertices[0];
   const glm::vec3& v2 = tri.vertices[1];
@@ -401,7 +407,7 @@ bool intersection_triangle(const Triangle& tri, const Ray &r, glm::vec3& interse
   float t = -(glm::dot(N, r.orig) + d) / nDotRayDirection;
   if (t < 0) return false; // the triangle is behind
 
-  intersection_point = r.orig + t * r.dir;
+  glm::vec3 intersection_point = r.orig + t * r.dir;
 
   // Step 2: inside-outside test
   glm::vec3 edge1 = v2 - v1;
@@ -419,10 +425,11 @@ bool intersection_triangle(const Triangle& tri, const Ray &r, glm::vec3& interse
   C = glm::cross(edge3, vp3);
   if (glm::dot(N, C) < 0) return false;
 
+  dist = t;
   return true;
 }
 
-bool intersection_triangle(const TriangleNormals& tri, const Ray &r, glm::vec3& intersection_point)
+bool intersection_triangle(const TriangleNormals& tri, const Ray &r, float& dist)
 {
   const glm::vec3& v1 = tri.vertices[0];
   const glm::vec3& v2 = tri.vertices[1];
@@ -439,7 +446,7 @@ bool intersection_triangle(const TriangleNormals& tri, const Ray &r, glm::vec3& 
   float t = -(glm::dot(N, r.orig) + d) / nDotRayDirection;
   if (t < 0) return false; // the triangle is behind
 
-  intersection_point = r.orig + t * r.dir;
+  glm::vec3 intersection_point = r.orig + t * r.dir;
 
   // Step 2: inside-outside test
   glm::vec3 edge1 = v2 - v1;
@@ -457,12 +464,14 @@ bool intersection_triangle(const TriangleNormals& tri, const Ray &r, glm::vec3& 
   C = glm::cross(edge3, vp3);
   if (glm::dot(N, C) < 0) return false;
 
+  dist = t;
   return true;
 }
 
-void compensate_float_rounding_error(Ray& ray)
+void compensate_float_rounding_error(Ray& ray, const glm::vec3& normal)
 {
-  ray.orig += 1000000 * std::numeric_limits<float>::epsilon() * ray.dir;
+  //ray.orig += 1000000 * std::numeric_limits<float>::epsilon() * ray.dir;
+  ray.orig += normal * 1000000.0f * std::numeric_limits<float>::epsilon();
 }
 
 glm::vec4 Render::compute_light(glm::vec3 direction, glm::vec4 lightcolor, glm::vec3 normal, glm::vec3 halfvec,
@@ -487,7 +496,7 @@ Color Render::compute_shading(const glm::vec3 &point, const glm::vec3 &normal, c
   for (auto& i : s.direct_lights)
   {
     Ray shadow_ray(point, -i.dir);
-    compensate_float_rounding_error(shadow_ray);
+    compensate_float_rounding_error(shadow_ray, normal);
 
     glm::vec3 hit_point;
     size_t index;
@@ -503,7 +512,7 @@ Color Render::compute_shading(const glm::vec3 &point, const glm::vec3 &normal, c
   {
     glm::vec3 lightdir = i.pos - point;
     Ray shadow_ray(point, lightdir);
-    compensate_float_rounding_error(shadow_ray);
+    compensate_float_rounding_error(shadow_ray, normal);
 
     float dist = glm::length(lightdir);
     glm::vec3 hit_point;
@@ -531,7 +540,8 @@ Color Render::compute_shading(const glm::vec3 &point, const glm::vec3 &normal, c
 bool Render::cast_ray(const Ray& ray, glm::vec3& intersection_point, size_t& index)
 {
   bool is_intersection = false;
-  float dist = std::numeric_limits<float>::max();
+  float dist = std::numeric_limits<float>::max(),
+    d = std::numeric_limits<float>::max();
 
   for (size_t i = 0; i < s.objects.size(); ++i)
   {
@@ -539,9 +549,8 @@ bool Render::cast_ray(const Ray& ray, glm::vec3& intersection_point, size_t& ind
     {
     case SPHERE:
     {
-      if (intersection_sphere(s.spheres[s.objects[i].index], ray, intersection_point))
+      if (intersection_sphere(s.spheres[s.objects[i].index], ray, d))
       {
-        float d = glm::length(ray.orig - intersection_point);
         if (d < dist)
         {
           dist = d;
@@ -554,9 +563,8 @@ bool Render::cast_ray(const Ray& ray, glm::vec3& intersection_point, size_t& ind
     case TRIANGLE:
     {
       Triangle& t = s.triangles[s.objects[i].index];
-      if (intersection_triangle(t, ray, intersection_point))
+      if (intersection_triangle(t, ray, d))
       {
-        float d = glm::length(ray.orig - intersection_point);
         if (d < dist)
         {
           dist = d;
@@ -569,9 +577,8 @@ bool Render::cast_ray(const Ray& ray, glm::vec3& intersection_point, size_t& ind
     case TRIANGLE_NORMALS:
     {
       TriangleNormals& t = s.triangle_normals[s.objects[i].index];
-      if (intersection_triangle(t, ray, intersection_point))
+      if (intersection_triangle(t, ray, d))
       {
-        float d = glm::length(ray.orig - intersection_point);
         if (d < dist)
         {
           dist = d;
@@ -585,6 +592,8 @@ bool Render::cast_ray(const Ray& ray, glm::vec3& intersection_point, size_t& ind
       std::cout << "Unknown object type!" << std::endl;
     }
   }
+
+  intersection_point = ray.orig + d * ray.dir;
 
   return is_intersection;
 }
@@ -612,6 +621,11 @@ glm::vec3 interpolate_normal(const TriangleNormals& triangle, const glm::vec3& i
   return glm::normalize(result);
 }
 
+Color mix_color(const Color& self_color, const Color& refl_color, const Color& coeff)
+{
+  return self_color * (Color(1.0f) - coeff) + refl_color * coeff;
+}
+
 Color Render::trace(const Ray &ray, int curr_depth)
 {
   Color result{ 0.0f, 0.0f, 0.0f, 0.0f };
@@ -634,19 +648,12 @@ Color Render::trace(const Ray &ray, int curr_depth)
   {
     Sphere& hit_sphere = s.spheres[hit_obj.index];
     specular = hit_sphere.material.specular;
-    normal = glm::normalize(intersection_point - hit_sphere.pos);
 
-    //glm::vec4 point = hit_sphere.transform * glm::vec4(intersection_point, 1.0f);
-    //intersection_point = point / point.w;
+    //normal = glm::normalize(intersection_point - hit_sphere.pos);
+    //normal = glm::normalize(glm::mat3(glm::transpose(hit_sphere.inverted_transform)) * normal);
 
-    //intersection_point = glm::mat3(hit_sphere.transform) * intersection_point;
-
-    //normal = glm::mat3(hit_sphere.transform) * normal;
-
-    //glm::vec4 n = hit_sphere.transform * glm::vec4(normal, 1.0f);
-    //normal = glm::normalize(n / n.w);
-
-    normal = glm::normalize(glm::mat3(glm::transpose(glm::inverse(hit_sphere.transform))) * normal);
+    glm::vec4 p = hit_sphere.transform * glm::vec4(intersection_point, 1.0f);
+    normal = glm::normalize(glm::mat3(glm::transpose(hit_sphere.inverted_transform)) * (glm::vec3(p) - hit_sphere.pos));
 
     result = compute_shading(intersection_point, normal, hit_sphere.material);
     break;
@@ -673,8 +680,9 @@ Color Render::trace(const Ray &ray, int curr_depth)
   }
 
   Ray secondary_ray(intersection_point, glm::reflect(ray.dir, normal));
-  compensate_float_rounding_error(secondary_ray);
+  compensate_float_rounding_error(secondary_ray, normal);
   result += specular * trace(secondary_ray, curr_depth);
+  //result = mix_color(result, trace(secondary_ray, curr_depth), specular);
 
   return result;
 }
