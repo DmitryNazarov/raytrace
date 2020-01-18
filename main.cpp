@@ -1,5 +1,6 @@
 #include "main.h"
 
+
 void debugMAT(const glm::mat4 &t)
 {
   std::cout << "T:" << std::setw(4) << t[0][0] << " " 
@@ -706,7 +707,7 @@ void Render::raytracer_process()
   glm::vec3 u = glm::normalize(glm::cross(s.up_init, w));
   glm::vec3 v = glm::cross(w, u);
 
-  size_t last_y = 0;
+  size_t last_y = s.height;
   for (size_t i = 0; i < draw_buffer_size; i += 4)
   {
     size_t p = i / 4;
@@ -728,9 +729,7 @@ void Render::raytracer_process()
     draw_buffer[i + 2] = static_cast<int>(std::min(c.b, 1.0f) * 255);
     draw_buffer[i + 3] = static_cast<int>(std::min(c.a, 1.0f) * 255);
 
-    if (y != last_y)
     {
-      last_y = y;
       std::scoped_lock<std::mutex> lock(guard);
       progress = static_cast<int>(std::round((static_cast<float>(y) / s.height * 100)));
     }
@@ -801,6 +800,7 @@ int main(int argc, char* argv[])
   try
   {
     Render r(read_settings(argv[1]));
+    //Render r(read_settings("C:\\project\\raytrace\\raytrace\\testscenes\\scene3.test"));
     r.start_raytrace();
     r.update();
   }
