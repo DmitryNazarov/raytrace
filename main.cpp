@@ -696,6 +696,7 @@ Color Render::trace(const Ray &ray, int curr_depth)
 void Render::start_raytrace()
 {
   raytracer_thread = std::thread(&Render::raytracer_process, this);
+  start_time = std::chrono::system_clock::now();
 }
 
 void Render::raytracer_process()
@@ -767,20 +768,26 @@ void Render::render_handling()
 {
   sf::Sprite sprite(texture);
 
-  int curr_progress = 0;
+  if (last_progress != 100)
   {
-    std::scoped_lock<std::mutex> lock(guard);
-    curr_progress = progress;
-  }
+    int curr_progress = 0;
+    {
+      std::scoped_lock<std::mutex> lock(guard);
+      curr_progress = progress;
+    }
 
-  if (curr_progress == 100)
-  {
-    buffer = draw_buffer;
-    text.setString("Completed!");
-  }
-  else
-  {
-    text.setString(std::to_string(curr_progress) + "%");
+    if (curr_progress == 100)
+    {
+      buffer = draw_buffer;
+      auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_time);
+      text.setString("Completed! " + std::to_string(elapsed.count()) + " ms");
+    }
+    else
+    {
+      text.setString(std::to_string(curr_progress) + "%");
+    }
+
+    last_progress = curr_progress;
   }
 
   texture.update(buffer.data());

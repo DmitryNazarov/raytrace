@@ -145,10 +145,12 @@ private:
 
   size_t draw_buffer_size;
   std::mutex guard;
-  int progress = 0;
+  int progress = 0, last_progress = 0;
 
   std::vector<uint8_t> draw_buffer;
   std::vector<uint8_t> buffer;
 
   std::thread raytracer_thread;
+
+  std::chrono::time_point<std::chrono::system_clock> start_time;
 };
