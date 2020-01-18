@@ -471,8 +471,10 @@ bool intersection_triangle(const TriangleNormals& tri, const Ray &r, float& dist
 
 void compensate_float_rounding_error(Ray& ray, const glm::vec3& normal)
 {
-  //ray.orig += 1000000 * std::numeric_limits<float>::epsilon() * ray.dir;
-  ray.orig += normal * 1000000.0f * std::numeric_limits<float>::epsilon();
+  if (glm::dot(ray.dir, normal) < 0.0f)
+    ray.orig -= 0.01f * normal;
+  else
+    ray.orig += 0.01f * normal;
 }
 
 glm::vec4 Render::compute_light(glm::vec3 direction, glm::vec4 lightcolor, glm::vec3 normal, glm::vec3 halfvec,
@@ -594,7 +596,7 @@ bool Render::cast_ray(const Ray& ray, glm::vec3& intersection_point, size_t& ind
     }
   }
 
-  intersection_point = ray.orig + d * ray.dir;
+  intersection_point = ray.orig + dist * ray.dir;
 
   return is_intersection;
 }
@@ -624,7 +626,10 @@ glm::vec3 interpolate_normal(const TriangleNormals& triangle, const glm::vec3& i
 
 Color mix_color(const Color& self_color, const Color& refl_color, const Color& coeff)
 {
-  return self_color * (Color(1.0f) - coeff) + refl_color * coeff;
+  float r = self_color.r * (1.0f - coeff.r) + refl_color.r * coeff.r;
+  float g = self_color.r * (1.0f - coeff.g) + refl_color.g * coeff.g;
+  float b = self_color.r * (1.0f - coeff.b) + refl_color.b * coeff.b;
+  return Color(r, g, b, self_color.a);
 }
 
 Color Render::trace(const Ray &ray, int curr_depth)
@@ -800,7 +805,7 @@ int main(int argc, char* argv[])
   try
   {
     Render r(read_settings(argv[1]));
-    //Render r(read_settings("C:\\project\\raytrace\\raytrace\\testscenes\\scene3.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\testscenes\\scene0.test"));
     r.start_raytrace();
     r.update();
   }
