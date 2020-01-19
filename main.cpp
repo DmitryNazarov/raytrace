@@ -31,15 +31,17 @@ Render::Render(const Settings &s) : s(s)
 
   texture.create(static_cast<unsigned>(s.width), static_cast<unsigned>(s.height));
 
-  draw_buffer_size = 4 * s.width * s.height;
+  pix_count = s.width * s.height;
 
-  draw_buffer.resize(draw_buffer_size, 0);
-  buffer.resize(draw_buffer_size, 0);
+  draw_buffer.resize(pix_count * 4, 0);
+  buffer.resize(pix_count * 4, 0);
+
+  start_raytrace();
 }
 
 Render::~Render()
 {
-  raytracer_thread.join();
+  task_provider.join();
 }
 
 template<typename T>
@@ -99,6 +101,7 @@ Settings read_settings(const std::string& filename)
       {
         settings.width = values[0];
         settings.height = values[1];
+        settings.aspect = static_cast<float>(settings.width) / static_cast<float>(settings.height);
       }
     }
     else if (cmd == "camera")
@@ -110,6 +113,10 @@ Settings read_settings(const std::string& filename)
         settings.center = glm::vec3(values[3], values[4], values[5]);
         settings.up_init = glm::vec3(values[6], values[7], values[8]);
         settings.fovy = values[9];
+
+        settings.w = glm::normalize(settings.eye_init - settings.center);
+        settings.u = glm::normalize(glm::cross(settings.up_init, settings.w));
+        settings.v = glm::cross(settings.w, settings.u);
       }
     }
     else if (cmd == "maxdepth")
@@ -695,49 +702,40 @@ Color Render::trace(const Ray &ray, int curr_depth)
 
 void Render::start_raytrace()
 {
-  raytracer_thread = std::thread(&Render::raytracer_process, this);
   start_time = std::chrono::system_clock::now();
+  task_provider = std::thread([this] {
+    size_t step = s.width;
+    for (size_t i = 0; i < pix_count; i += step)
+    {
+      pool.add_work([this, i, step]() {
+        raytracer_process(i, i + step);
+        });
+    }
+    });
 }
 
-void Render::raytracer_process()
+void Render::raytracer_process(size_t start, size_t end)
 {
-  float aspect = static_cast<float>(s.width) / static_cast<float>(s.height);
-  float znear = 0.1f, zfar = 99.0f;
-
-  //projection = glm::perspective(glm::radians(s.fovy), aspect, znear, zfar);
-  //view = glm::lookAt(s.eye_init, s.center, s.up_init);
-  //glm::mat4 projection = Transform::perspective(glm::radians(s.fovy), aspect, znear, zfar);
-  //view = Transform::lookAt(s.eye_init, s.center, s.up_init);
-
-  glm::vec3 w = glm::normalize(s.eye_init - s.center);
-  glm::vec3 u = glm::normalize(glm::cross(s.up_init, w));
-  glm::vec3 v = glm::cross(w, u);
-
-  size_t last_y = s.height;
-  for (size_t i = 0; i < draw_buffer_size; i += 4)
+  for (size_t i = start; i < end; ++i)
   {
-    size_t p = i / 4;
-    size_t x = p % s.width;
-    size_t y = p / s.width;
+    size_t x = i % s.width;
+    size_t y = i / s.width;
 
     float tan_theta = glm::tan(glm::radians(s.fovy) / 2);
-    float a = (2 * (x + 0.5f) / static_cast<float>(s.width) - 1) * tan_theta * aspect;
+    float a = (2 * (x + 0.5f) / static_cast<float>(s.width) - 1) * tan_theta * s.aspect;
     float b = (1 - 2 * (y + 0.5f) / static_cast<float>(s.height)) * tan_theta;
-    glm::vec3 dir = glm::normalize(a * u + b * v - w);
+    glm::vec3 dir = glm::normalize(a * s.u + b * s.v - s.w);
 
     Color c = trace(Ray(s.eye_init, dir));
-    //dir = glm::vec3(a, b, -1);
-    //glm::vec4 t = view * glm::vec4(dir, 1.0f);
-    //dir = glm::normalize(t / t.w);
-    //Color c = trace(Ray(glm::vec3(0), dir));
-    draw_buffer[i] = static_cast<int>(std::min(c.r, 1.0f) * 255);
-    draw_buffer[i + 1] = static_cast<int>(std::min(c.g, 1.0f) * 255);
-    draw_buffer[i + 2] = static_cast<int>(std::min(c.b, 1.0f) * 255);
-    draw_buffer[i + 3] = static_cast<int>(std::min(c.a, 1.0f) * 255);
+
+    draw_buffer[4 * i] = static_cast<int>(std::min(c.r, 1.0f) * 255);
+    draw_buffer[4 * i + 1] = static_cast<int>(std::min(c.g, 1.0f) * 255);
+    draw_buffer[4 * i + 2] = static_cast<int>(std::min(c.b, 1.0f) * 255);
+    draw_buffer[4 * i + 3] = static_cast<int>(std::min(c.a, 1.0f) * 255);
 
     {
       std::scoped_lock<std::mutex> lock(guard);
-      progress = static_cast<int>(std::round((static_cast<float>(y) / s.height * 100)));
+      ++progress;
     }
   }
 }
@@ -768,15 +766,15 @@ void Render::render_handling()
 {
   sf::Sprite sprite(texture);
 
-  if (last_progress != 100)
+  if (last_progress != pix_count)
   {
-    int curr_progress = 0;
+    size_t curr_progress = 0;
     {
       std::scoped_lock<std::mutex> lock(guard);
       curr_progress = progress;
     }
 
-    if (curr_progress == 100)
+    if (curr_progress == pix_count)
     {
       buffer = draw_buffer;
       auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_time);
@@ -784,7 +782,8 @@ void Render::render_handling()
     }
     else
     {
-      text.setString(std::to_string(curr_progress) + "%");
+      int p = static_cast<int>(std::round(static_cast<float>(curr_progress) / static_cast<float>(pix_count) * 100));
+      text.setString(std::to_string(p) + "%");
     }
 
     last_progress = curr_progress;
@@ -806,14 +805,13 @@ int main(int argc, char* argv[])
   if (argc < 2)
   {
     std::cout << "Enter path to scene file" << std::endl;
-    return EXIT_FAILURE;
+    //return EXIT_FAILURE;
   }
 
   try
   {
-    Render r(read_settings(argv[1]));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\testscenes\\scene0.test"));
-    r.start_raytrace();
+    //Render r(read_settings(argv[1]));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\testscenes\\scene0.test"));
     r.update();
   }
   catch (std::exception &e)

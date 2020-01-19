@@ -19,6 +19,7 @@ find_package(Threads)
 set(SOURCE
 	transform.cpp
 	main.cpp
+    threadpool.cpp
 )
 
 add_executable(${PROJECT_NAME} WIN32 ${SOURCE})

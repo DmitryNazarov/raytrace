@@ -17,6 +17,7 @@
 #include <glm/glm.hpp>
 
 #include <transform.h>
+#include <threadpool.h>
 
 
 using Color = glm::vec4;
@@ -86,13 +87,16 @@ struct Object
 
 struct Settings
 {
-  size_t width = 180, height = 120;
+  size_t width, height;
+  float aspect;
   int depth = 5;
   std::string filename = "screenshot.png";
   glm::vec3 eye_init;
   glm::vec3 center;
   glm::vec3 up_init;
   float fovy = 90;
+
+  glm::vec3 w, u, v;
 
   std::vector<Sphere> spheres;
   std::vector<Triangle> triangles;
@@ -104,6 +108,8 @@ struct Settings
   std::vector<Object> objects;
 
   float attenuation[3] = {1.0f, .0f, .0f};
+
+  size_t threads_count = std::thread::hardware_concurrency() - 1;
 };
 
 Settings read_settings(const std::string& filename);
@@ -127,7 +133,7 @@ public:
 private:
   Color trace(const Ray& ray, int curr_depth = 0);
   void screeshot();
-  void raytracer_process();
+  void raytracer_process(size_t start, size_t end);
   void render_handling();
   bool cast_ray(const Ray& ray, glm::vec3& intersection_point, size_t& index);
   Color compute_shading(const glm::vec3& point, const glm::vec3& normal, const Material& m);
@@ -143,14 +149,18 @@ private:
 
   sf::Texture texture;
 
-  size_t draw_buffer_size;
+  size_t pix_count;
+
   std::mutex guard;
-  int progress = 0, last_progress = 0;
+   size_t progress = 0;
+
+  size_t last_progress = 0;
 
   std::vector<uint8_t> draw_buffer;
   std::vector<uint8_t> buffer;
 
-  std::thread raytracer_thread;
+  std::thread task_provider;
+  ThreadPool pool;
 
   std::chrono::time_point<std::chrono::system_clock> start_time;
 };
