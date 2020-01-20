@@ -1,29 +1,29 @@
-#include <iostream>
-#include <string>
-#include <unordered_map>
-#include <filesystem>
-#include <thread>
-#include <fstream>
-#include <mutex>
 #include <chrono>
-#include <stack>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <mutex>
 #include <sstream>
+#include <stack>
+#include <string>
+#include <thread>
+#include <unordered_map>
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
+
 
 #include <glm/glm.hpp>
 
-#include <transform.h>
 #include <threadpool.h>
-
+#include <transform.h>
 
 using Color = glm::vec4;
 
-struct Material
-{
+struct Material {
   glm::vec4 ambient;
   glm::vec4 diffuse;
   glm::vec4 specular;
@@ -38,55 +38,38 @@ struct Sphere {
   glm::mat4 transform, inverted_transform;
 };
 
-struct Triangle
-{
+struct Triangle {
   std::vector<glm::vec3> vertices;
   glm::vec3 normal;
   Material material;
-  glm::mat4 transform;
 };
 
-struct TriangleNormals
-{
+struct TriangleNormals {
   std::vector<glm::vec3> vertices;
   std::vector<glm::vec3> normals;
   Material material;
-  glm::mat4 transform;
 };
 
-struct DirectionLight
-{
-  DirectionLight(const glm::vec3 &dir, const Color &c)
-    : dir(dir), color(c)
-  {}
+struct DirectionLight {
+  DirectionLight(const glm::vec3 &dir, const Color &c) : dir(dir), color(c) {}
   glm::vec3 dir;
   Color color;
 };
 
-struct PointLight
-{
-  PointLight(const glm::vec3& pos, const Color& c)
-    : pos(pos), color(c)
-  {}
+struct PointLight {
+  PointLight(const glm::vec3 &pos, const Color &c) : pos(pos), color(c) {}
   glm::vec3 pos;
   Color color;
 };
 
-enum ObjectType
-{
-  TRIANGLE,
-  TRIANGLE_NORMALS,
-  SPHERE
-};
+enum ObjectType { TRIANGLE, TRIANGLE_NORMALS, SPHERE };
 
-struct Object
-{
+struct Object {
   ObjectType type;
   size_t index;
 };
 
-struct Settings
-{
+struct Settings {
   size_t width, height;
   float aspect;
   int depth = 5;
@@ -112,18 +95,16 @@ struct Settings
   size_t threads_count = std::thread::hardware_concurrency() - 1;
 };
 
-Settings read_settings(const std::string& filename);
+Settings read_settings(const std::string &filename);
 
-struct Ray
-{
-  Ray(const glm::vec3& origin, const glm::vec3& direction) : orig(origin), dir(direction)
-  {}
+struct Ray {
+  Ray(const glm::vec3 &origin, const glm::vec3 &direction)
+      : orig(origin), dir(direction) {}
   glm::vec3 orig;
   glm::vec3 dir;
 };
 
-class Render
-{
+class Render {
 public:
   Render(const Settings &s);
   ~Render();
@@ -131,14 +112,17 @@ public:
   void start_raytrace();
 
 private:
-  Color trace(const Ray& ray, int curr_depth = 0);
+  Color trace(const Ray &ray, int curr_depth = 0);
   void screeshot();
   void raytracer_process(size_t start, size_t end);
   void render_handling();
-  bool cast_ray(const Ray& ray, glm::vec3& intersection_point, size_t& index);
-  Color compute_shading(const glm::vec3& point, const glm::vec3& normal, const Material& m);
-  glm::vec4 compute_light(glm::vec3 direction, glm::vec4 lightcolor, glm::vec3 normal, glm::vec3 halfvec,
-    glm::vec4 diffuse, glm::vec4 specular, float shininess);
+  bool cast_ray(const Ray &ray, glm::vec3 &intersection_point, size_t &index);
+  Color compute_shading(const glm::vec3 &point, const glm::vec3 &normal,
+                        const Material &m);
+  glm::vec4 compute_light(glm::vec3 direction, glm::vec4 lightcolor,
+                          glm::vec3 normal, glm::vec3 halfvec,
+                          glm::vec4 diffuse, glm::vec4 specular,
+                          float shininess);
 
 private:
   Settings s;
@@ -152,7 +136,7 @@ private:
   size_t pix_count;
 
   std::mutex guard;
-   size_t progress = 0;
+  size_t progress = 0;
 
   size_t last_progress = 0;
 
