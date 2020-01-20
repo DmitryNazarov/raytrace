@@ -1,14 +1,7 @@
-// Transform.cpp: implementation of the Transform class.
-
-// Note: when you construct a matrix using mat4() or mat3(), it will be
-// COLUMN-MAJOR Keep this in mind in readfile.cpp and display.cpp See FAQ for
-// more details or if you're having problems.
-
 #include "transform.h"
-#include <stdio.h>
 
-// Helper rotation function.  Please implement this.
-glm::mat3 Transform::rotate(const float degrees, const glm::vec3 &axis) {
+namespace Transform {
+glm::mat3 rotate(const float degrees, const glm::vec3 &axis) {
   glm::mat3 result;
   float rad = glm::radians(degrees);
   float cos_a = cos(rad);
@@ -27,7 +20,7 @@ glm::mat3 Transform::rotate(const float degrees, const glm::vec3 &axis) {
   return result;
 }
 
-void Transform::left(float degrees, glm::vec3 &eye, glm::vec3 &up) {
+void left(float degrees, glm::vec3 &eye, glm::vec3 &up) {
   glm::vec3 w = glm::normalize(eye);
   glm::vec3 u = glm::normalize(glm::cross(up, w));
   glm::vec3 v = glm::cross(w, u);
@@ -36,10 +29,7 @@ void Transform::left(float degrees, glm::vec3 &eye, glm::vec3 &up) {
   up = rotate(degrees, v) * up;
 }
 
-void Transform::up(float degrees, glm::vec3 &eye, glm::vec3 &up) {
-  // printf("Coordinates: %.2f, %.2f, %.2f; distance: %.2f\n", eye.x, eye.y,
-  // eye.z,
-  //  sqrt(pow(eye.x, 2) + pow(eye.y, 2) + pow(eye.z, 2)));
+void up(float degrees, glm::vec3 &eye, glm::vec3 &up) {
   glm::vec3 w = glm::normalize(eye);
   glm::vec3 u = -glm::normalize(glm::cross(up, w));
 
@@ -47,7 +37,7 @@ void Transform::up(float degrees, glm::vec3 &eye, glm::vec3 &up) {
   up = rotate(degrees, u) * up;
 }
 
-glm::mat4 Transform::lookAt(const glm::vec3 &eye, const glm::vec3 &center,
+glm::mat4 lookAt(const glm::vec3 &eye, const glm::vec3 &center,
                             const glm::vec3 &up) {
   glm::vec3 w = glm::normalize(eye - center);
   glm::vec3 u = glm::normalize(glm::cross(up, w));
@@ -62,7 +52,7 @@ glm::mat4 Transform::lookAt(const glm::vec3 &eye, const glm::vec3 &center,
   return m;
 }
 
-glm::mat4 Transform::perspective(float fovy, float aspect, float zNear,
+glm::mat4 perspective(float fovy, float aspect, float zNear,
                                  float zFar) {
   float theta = fovy / 2;
   float d = glm::cos(theta) / glm::sin(theta);
@@ -76,32 +66,24 @@ glm::mat4 Transform::perspective(float fovy, float aspect, float zNear,
   return ret;
 }
 
-glm::mat4 Transform::scale(const float &sx, const float &sy, const float &sz) {
+glm::mat4 scale(const float &sx, const float &sy, const float &sz) {
   glm::mat4 ret = glm::mat4(sx, 0, 0, 0, 0, sy, 0, 0, 0, 0, sz, 0, 0, 0, 0, 1);
 
   return ret;
 }
 
-glm::mat4 Transform::translate(const float &tx, const float &ty,
+glm::mat4 translate(const float &tx, const float &ty,
                                const float &tz) {
   glm::mat4 ret = glm::mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, tx, ty, tz, 1);
 
   return ret;
 }
 
-// To normalize the up direction and construct a coordinate frame.
-// As discussed in the lecture.  May be relevant to create a properly
-// orthogonal and normalized up.
-// This function is provided as a helper, in case you want to use it.
-// Using this function (in readfile.cpp or display.cpp) is optional.
-
-glm::vec3 Transform::upvector(const glm::vec3 &up, const glm::vec3 &zvec) {
+glm::vec3 upvector(const glm::vec3 &up, const glm::vec3 &zvec) {
   glm::vec3 x = glm::cross(up, zvec);
   glm::vec3 y = glm::cross(zvec, x);
   glm::vec3 ret = glm::normalize(y);
   return ret;
 }
 
-Transform::Transform() {}
-
-Transform::~Transform() {}
+}; // namespace Transform
