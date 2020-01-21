@@ -5,14 +5,15 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "Configure",
+            "label": "Configure debug",
             "options": {
-                "cwd": "${workspaceRoot}/build"
+                "cwd": "${workspaceRoot}/build-debug"
             },
             "command": "cmake",
             "args": [
                 "-G",
                 "'Ninja'",
+                "-DCMAKE_BUILD_TYPE=Debug",
                 "./.."
             ],
             "group": {
@@ -23,9 +24,44 @@
         },
         {
             "type": "shell",
-            "label": "Build",
+            "label": "Configure release",
             "options": {
-                "cwd": "${workspaceRoot}/build"
+                "cwd": "${workspaceRoot}/build-release"
+            },
+            "command": "cmake",
+            "args": [
+                "-G",
+                "'Ninja'",
+                "-DCMAKE_BUILD_TYPE=Release",
+                "./.."
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Build debug",
+            "options": {
+                "cwd": "${workspaceRoot}/build-debug"
+            },
+            "command": "cmake",
+            "args": [
+                "--build",
+                "."
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "type": "shell",
+            "label": "Build release",
+            "options": {
+                "cwd": "${workspaceRoot}/build-release"
             },
             "command": "cmake",
             "args": [
