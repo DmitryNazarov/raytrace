@@ -71,7 +71,7 @@ Settings read_settings(const std::string &filename) {
     return settings;
 
   std::stack<mat4> transfstack;
-  transfstack.emplace(1.0); // identity
+  transfstack.push(mat4(1.0)); // identity
 
   while (getline(in, str)) {
     if ((str.find_first_not_of(" \t\r\n") == std::string::npos) ||
@@ -153,7 +153,7 @@ Settings read_settings(const std::string &filename) {
         vec3 axis = normalize(vec3(values[0], values[1], values[2]));
         // rightmultiply(mat4(rotate(values[3], axis)),
         //               transfstack);
-        rightmultiply(mat4(rotate(mat4(1.0f), values[3], axis)), transfstack);
+        rightmultiply(rotate(mat4(1.0f), values[3], axis), transfstack);
       }
     } else if (cmd == "pushTransform") {
       transfstack.push(transfstack.top());
@@ -710,10 +710,10 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-    // Render
-    // r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\testscenes\\scene0.test"));
-    Render r(read_settings(
-        "/home/dev/Work/github/raytrace/testscenes/scene00.test"));
+     Render
+     r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\scene3.test"));
+    //Render r(read_settings(
+    //    "/home/dev/Work/github/raytrace/testscenes/scene00.test"));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;

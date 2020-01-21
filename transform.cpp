@@ -1,8 +1,7 @@
 #include "transform.h"
 
 namespace Transform {
-mat3 rotate(const float degrees, const vec3 &axis) {
-  mat3 result;
+mat4 rotate(const mat4& m, const float degrees, const vec3 &axis) {
   float rad = radians(degrees);
   float cos_a = cos(rad);
   float sin_a = sin(rad);
@@ -14,28 +13,26 @@ mat3 rotate(const float degrees, const vec3 &axis) {
   mat3 m2 = mat3(x * x, x * y, x * z, x * y, y * y, y * z, x * z, y * z, z * z);
   mat3 m3 = mat3(0., z, -y, -z, 0., x, y, -x, 0.);
 
-  result = mat3(1.0) * cos_a + m2 * (1 - cos_a) + m3 * sin_a;
+  mat3 rotate = mat3(1.0) * cos_a + m2 * (1 - cos_a) + m3 * sin_a;
 
-  return result;
+  return m * mat4(rotate);
 }
 
-mat4 scale(const float &sx, const float &sy, const float &sz) {
-  mat4 ret = mat4(sx, 0, 0, 0, 0, sy, 0, 0, 0, 0, sz, 0, 0, 0, 0, 1);
-
-  return ret;
+mat4 scale(const mat4& m, const vec3 &v) {
+  mat4 scale = mat4(v.x, 0, 0, 0, 0, v.y, 0, 0, 0, 0, v.z, 0, 0, 0, 0, 1);
+  return m * scale;
 }
 
-mat4 translate(const float &tx, const float &ty, const float &tz) {
-  mat4 ret = mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, tx, ty, tz, 1);
-
-  return ret;
+mat4 translate(const mat4& m, const vec3& v) {
+  mat4 translate = mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, v.x, v.y, v.z, 1);
+  return m * translate;
 }
 
 float dot(const vec3 &a, const vec3 &b) {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-float radians(float angle) { return angle * M_PI / 180; }
+float radians(float angle) { return angle * static_cast<float>(M_PI) / 180.0f; }
 
 float length(const vec3 &v) { return sqrt(dot(v, v)); }
 

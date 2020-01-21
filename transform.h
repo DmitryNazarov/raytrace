@@ -108,15 +108,9 @@ using vec4 = glm::vec4;
 using mat3 = glm::mat3;
 using mat4 = glm::mat4;
 
-void left(float degrees, vec3 &eye, vec3 &up);
-void up(float degrees, vec3 &eye, vec3 &up);
-mat4 lookAt(const vec3 &eye, const vec3 &center, const vec3 &up);
-mat4 perspective(float fovy, float aspect, float zNear, float zFar);
-mat3 rotate(const float degrees, const vec3 &axis);
-mat4 scale(const float &sx, const float &sy, const float &sz);
-mat4 translate(const float &tx, const float &ty, const float &tz);
-vec3 upvector(const vec3 &up, const vec3 &zvec);
-
+mat4 rotate(const mat4& m, const float degrees, const vec3 &axis);
+mat4 scale(const mat4& m, const vec3& v);
+mat4 translate(const mat4& m, const vec3& v);
 vec3 normalize(const vec3 &v);
 vec3 cross(const vec3 &a, const vec3 &b);
 float dot(const vec3 &a, const vec3 &b);
