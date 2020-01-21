@@ -1,6 +1,6 @@
 #include "main.h"
 
-void debugMAT(const glm::mat4 &t) {
+void debugMAT(const mat4 &t) {
   std::cout << "T:" << std::setw(4) << t[0][0] << " " << std::setw(4) << t[1][0]
             << " " << std::setw(4) << t[2][0] << " " << std::setw(4) << t[3][0]
             << std::endl;
@@ -48,16 +48,16 @@ bool readvals(std::stringstream &s, const int numvals, T *values) {
   return true;
 }
 
-void rightmultiply(const glm::mat4 &M, std::stack<glm::mat4> &transfstack) {
-  glm::mat4 &T = transfstack.top();
+void rightmultiply(const mat4 &M, std::stack<mat4> &transfstack) {
+  mat4 &T = transfstack.top();
   T = T * M;
 }
 
 Settings read_settings(const std::string &filename) {
   Settings settings;
 
-  std::vector<glm::vec3> vertices;
-  std::vector<std::pair<glm::vec3, glm::vec3>> vertex_normals;
+  std::vector<vec3> vertices;
+  std::vector<std::pair<vec3, vec3>> vertex_normals;
 
   Color ambient{0.2f, 0.2f, 0.2f, 1.0f};
   Color diffuse{0.0f, 0.0f, 0.0f, 0.0f};
@@ -70,7 +70,7 @@ Settings read_settings(const std::string &filename) {
   if (!in.is_open())
     return settings;
 
-  std::stack<glm::mat4> transfstack;
+  std::stack<mat4> transfstack;
   transfstack.emplace(1.0); // identity
 
   while (getline(in, str)) {
@@ -92,14 +92,14 @@ Settings read_settings(const std::string &filename) {
     } else if (cmd == "camera") {
       float values[10];
       if (readvals(ss, 10, values)) {
-        settings.eye_init = glm::vec3(values[0], values[1], values[2]);
-        settings.center = glm::vec3(values[3], values[4], values[5]);
-        settings.up_init = glm::vec3(values[6], values[7], values[8]);
+        settings.eye_init = vec3(values[0], values[1], values[2]);
+        settings.center = vec3(values[3], values[4], values[5]);
+        settings.up_init = vec3(values[6], values[7], values[8]);
         settings.fovy = values[9];
 
-        settings.w = glm::normalize(settings.eye_init - settings.center);
-        settings.u = glm::normalize(glm::cross(settings.up_init, settings.w));
-        settings.v = glm::cross(settings.w, settings.u);
+        settings.w = normalize(settings.eye_init - settings.center);
+        settings.u = normalize(cross(settings.up_init, settings.w));
+        settings.v = cross(settings.w, settings.u);
       }
     } else if (cmd == "maxdepth") {
       int value;
@@ -116,9 +116,9 @@ Settings read_settings(const std::string &filename) {
       if (readvals(ss, 4, values)) {
         Sphere s;
         s.radius = values[3];
-        s.pos = glm::vec3(values[0], values[1], values[2]);
+        s.pos = vec3(values[0], values[1], values[2]);
         s.transform = transfstack.top();
-        s.inverted_transform = glm::inverse(transfstack.top());
+        s.inverted_transform = inverse(transfstack.top());
         s.material.ambient = ambient;
         s.material.diffuse = diffuse;
         s.material.specular = specular;
@@ -133,22 +133,27 @@ Settings read_settings(const std::string &filename) {
     } else if (cmd == "translate") {
       float values[3];
       if (readvals(ss, 3, values)) {
-        rightmultiply(Transform::translate(values[0], values[1], values[2]),
-                      transfstack);
+        // rightmultiply(translate(values[0], values[1], values[2]),
+        //              transfstack);
+        rightmultiply(
+            translate(mat4(1.0f), vec3(values[0], values[1], values[2])),
+            transfstack);
       }
     } else if (cmd == "scale") {
       float values[3];
       if (readvals(ss, 3, values)) {
-        rightmultiply(Transform::scale(values[0], values[1], values[2]),
+        // rightmultiply(scale(values[0], values[1], values[2]),
+        //               transfstack);
+        rightmultiply(scale(mat4(1.0f), vec3(values[0], values[1], values[2])),
                       transfstack);
       }
     } else if (cmd == "rotate") {
       float values[4];
       if (readvals(ss, 4, values)) {
-        glm::vec3 axis =
-            glm::normalize(glm::vec3(values[0], values[1], values[2]));
-        rightmultiply(glm::mat4(Transform::rotate(values[3], axis)),
-                      transfstack);
+        vec3 axis = normalize(vec3(values[0], values[1], values[2]));
+        // rightmultiply(mat4(rotate(values[3], axis)),
+        //               transfstack);
+        rightmultiply(mat4(rotate(mat4(1.0f), values[3], axis)), transfstack);
       }
     } else if (cmd == "pushTransform") {
       transfstack.push(transfstack.top());
@@ -166,8 +171,8 @@ Settings read_settings(const std::string &filename) {
     } else if (cmd == "vertexnormal") {
       float values[6];
       if (readvals(ss, 6, values)) {
-        auto vertex = glm::vec3(values[0], values[1], values[2]);
-        auto vertex_normal = glm::vec3(values[3], values[4], values[5]);
+        auto vertex = vec3(values[0], values[1], values[2]);
+        auto vertex_normal = vec3(values[3], values[4], values[5]);
         vertex_normals.emplace_back(vertex, vertex_normal);
       }
     } else if (cmd == "tri") {
@@ -175,13 +180,13 @@ Settings read_settings(const std::string &filename) {
       if (readvals(ss, 3, values)) {
         Triangle t;
         t.vertices.push_back(transfstack.top() *
-                             glm::vec4(vertices[values[0]], 1.0f));
+                             vec4(vertices[values[0]], 1.0f));
         t.vertices.push_back(transfstack.top() *
-                             glm::vec4(vertices[values[1]], 1.0f));
+                             vec4(vertices[values[1]], 1.0f));
         t.vertices.push_back(transfstack.top() *
-                             glm::vec4(vertices[values[2]], 1.0f));
-        t.normal = glm::normalize(glm::cross(t.vertices[1] - t.vertices[0],
-                                             t.vertices[2] - t.vertices[0]));
+                             vec4(vertices[values[2]], 1.0f));
+        t.normal = normalize(cross(t.vertices[1] - t.vertices[0],
+                                   t.vertices[2] - t.vertices[0]));
         t.material.ambient = ambient;
         t.material.diffuse = diffuse;
         t.material.specular = specular;
@@ -198,17 +203,17 @@ Settings read_settings(const std::string &filename) {
       if (readvals(ss, 3, values)) {
         TriangleNormals t;
         t.vertices.push_back(transfstack.top() *
-                             glm::vec4(vertex_normals[values[0]].first, 1.0f));
+                             vec4(vertex_normals[values[0]].first, 1.0f));
         t.vertices.push_back(transfstack.top() *
-                             glm::vec4(vertex_normals[values[1]].first, 1.0f));
+                             vec4(vertex_normals[values[1]].first, 1.0f));
         t.vertices.push_back(transfstack.top() *
-                             glm::vec4(vertex_normals[values[2]].first, 1.0f));
+                             vec4(vertex_normals[values[2]].first, 1.0f));
         t.vertices.push_back(transfstack.top() *
-                             glm::vec4(vertex_normals[values[0]].second, 1.0f));
+                             vec4(vertex_normals[values[0]].second, 1.0f));
         t.vertices.push_back(transfstack.top() *
-                             glm::vec4(vertex_normals[values[1]].second, 1.0f));
+                             vec4(vertex_normals[values[1]].second, 1.0f));
         t.vertices.push_back(transfstack.top() *
-                             glm::vec4(vertex_normals[values[2]].second, 1.0f));
+                             vec4(vertex_normals[values[2]].second, 1.0f));
         t.material.ambient = ambient;
         t.material.diffuse = diffuse;
         t.material.specular = specular;
@@ -223,14 +228,14 @@ Settings read_settings(const std::string &filename) {
     } else if (cmd == "directional") {
       float values[6];
       if (readvals(ss, 6, values)) {
-        auto dir = glm::vec3(values[0], values[1], values[2]);
+        auto dir = vec3(values[0], values[1], values[2]);
         auto c = Color(values[3], values[4], values[5], 1.0f);
         settings.direct_lights.emplace_back(dir, c);
       }
     } else if (cmd == "point") {
       float values[6];
       if (readvals(ss, 6, values)) {
-        auto pos = glm::vec3(values[0], values[1], values[2]);
+        auto pos = vec3(values[0], values[1], values[2]);
         auto c = Color(values[3], values[4], values[5], 1.0f);
         settings.point_lights.emplace_back(pos, c);
       }
@@ -277,18 +282,18 @@ Settings read_settings(const std::string &filename) {
 }
 
 bool intersection_sphere(Sphere &s, const Ray &r, float &dist) {
-  glm::vec3 orig = s.inverted_transform * glm::vec4(r.orig, 1.0f);
-  glm::vec3 dir = glm::normalize(s.inverted_transform * glm::vec4(r.dir, 0.0f));
+  vec3 orig = s.inverted_transform * vec4(r.orig, 1.0f);
+  vec3 dir = normalize(s.inverted_transform * vec4(r.dir, 0.0f));
 
   // solve t * t * (r.dir * r.dir) + 2 * t * r.dir * (r.orig - i.pos) + (r.orig
   // - i.pos) * (r.orig - i.pos) - i.radius^2 = 0;
-  float a = glm::dot(dir, dir);
-  float b = 2 * glm::dot(dir, (orig - s.pos));
-  float c = glm::dot((orig - s.pos), (orig - s.pos)) - s.radius * s.radius;
+  float a = dot(dir, dir);
+  float b = 2 * dot(dir, (orig - s.pos));
+  float c = dot((orig - s.pos), (orig - s.pos)) - s.radius * s.radius;
   float d = b * b - 4 * a * c;
 
   if (d > 0) {
-    float sqrt_d = glm::sqrt(d);
+    float sqrt_d = sqrt(d);
     float t1 = (-b + sqrt_d) / 2 * a;
     float t2 = (-b - sqrt_d) / 2 * a;
 
@@ -300,17 +305,17 @@ bool intersection_sphere(Sphere &s, const Ray &r, float &dist) {
       t = std::min(t1, t2);
     }
 
-    glm::vec3 intersection_point = orig + t * dir;
-    glm::vec3 trans_point = s.transform * glm::vec4(intersection_point, 1.0f);
-    dist = glm::length(trans_point - r.orig);
+    vec3 intersection_point = orig + t * dir;
+    vec3 trans_point = s.transform * vec4(intersection_point, 1.0f);
+    dist = length(trans_point - r.orig);
 
     return true;
   } else if (d == 0) {
     float t = -b / 2 * a;
 
-    glm::vec3 intersection_point = orig + t * dir;
-    glm::vec3 trans_point = s.transform * glm::vec4(intersection_point, 1.0f);
-    dist = glm::length(trans_point - r.orig);
+    vec3 intersection_point = orig + t * dir;
+    vec3 trans_point = s.transform * vec4(intersection_point, 1.0f);
+    dist = length(trans_point - r.orig);
 
     return true;
   }
@@ -319,41 +324,41 @@ bool intersection_sphere(Sphere &s, const Ray &r, float &dist) {
 }
 
 bool intersection_triangle(const Triangle &tri, const Ray &r, float &dist) {
-  const glm::vec3 &v1 = tri.vertices[0];
-  const glm::vec3 &v2 = tri.vertices[1];
-  const glm::vec3 &v3 = tri.vertices[2];
+  const vec3 &v1 = tri.vertices[0];
+  const vec3 &v2 = tri.vertices[1];
+  const vec3 &v3 = tri.vertices[2];
 
-  glm::vec3 N = glm::cross(v2 - v1, v3 - v1);
+  vec3 N = cross(v2 - v1, v3 - v1);
 
   // Step 1: finding intersection_point
-  float nDotRayDirection = glm::dot(N, r.dir);
+  float nDotRayDirection = dot(N, r.dir);
   if (fabs(nDotRayDirection) < std::numeric_limits<float>::epsilon())
     return false; // they are parallel, so they don't intersect
 
-  float d = glm::dot(N, v1);
-  float t = -(glm::dot(N, r.orig) + d) / nDotRayDirection;
+  float d = dot(N, v1);
+  float t = -(dot(N, r.orig) + d) / nDotRayDirection;
   if (t < 0)
     return false; // the triangle is behind
 
-  glm::vec3 intersection_point = r.orig + t * r.dir;
+  vec3 intersection_point = r.orig + t * r.dir;
 
   // Step 2: inside-outside test
-  glm::vec3 edge1 = v2 - v1;
-  glm::vec3 vp1 = intersection_point - v1;
-  glm::vec3 C = glm::cross(edge1, vp1);
-  if (glm::dot(N, C) < 0)
+  vec3 edge1 = v2 - v1;
+  vec3 vp1 = intersection_point - v1;
+  vec3 C = cross(edge1, vp1);
+  if (dot(N, C) < 0)
     return false; // P is on the right side
 
-  glm::vec3 edge2 = v3 - v2;
-  glm::vec3 vp2 = intersection_point - v2;
-  C = glm::cross(edge2, vp2);
-  if (glm::dot(N, C) < 0)
+  vec3 edge2 = v3 - v2;
+  vec3 vp2 = intersection_point - v2;
+  C = cross(edge2, vp2);
+  if (dot(N, C) < 0)
     return false;
 
-  glm::vec3 edge3 = v1 - v3;
-  glm::vec3 vp3 = intersection_point - v3;
-  C = glm::cross(edge3, vp3);
-  if (glm::dot(N, C) < 0)
+  vec3 edge3 = v1 - v3;
+  vec3 vp3 = intersection_point - v3;
+  C = cross(edge3, vp3);
+  if (dot(N, C) < 0)
     return false;
 
   dist = t;
@@ -362,104 +367,103 @@ bool intersection_triangle(const Triangle &tri, const Ray &r, float &dist) {
 
 bool intersection_triangle(const TriangleNormals &tri, const Ray &r,
                            float &dist) {
-  const glm::vec3 &v1 = tri.vertices[0];
-  const glm::vec3 &v2 = tri.vertices[1];
-  const glm::vec3 &v3 = tri.vertices[2];
+  const vec3 &v1 = tri.vertices[0];
+  const vec3 &v2 = tri.vertices[1];
+  const vec3 &v3 = tri.vertices[2];
 
-  glm::vec3 N = glm::cross(v2 - v1, v3 - v1);
+  vec3 N = cross(v2 - v1, v3 - v1);
 
   // Step 1: finding intersection_point
-  float nDotRayDirection = glm::dot(N, r.dir);
+  float nDotRayDirection = dot(N, r.dir);
   if (fabs(nDotRayDirection) < std::numeric_limits<float>::epsilon())
     return false; // they are parallel, so they don't intersect
 
-  float d = glm::dot(N, v1);
-  float t = -(glm::dot(N, r.orig) + d) / nDotRayDirection;
+  float d = dot(N, v1);
+  float t = -(dot(N, r.orig) + d) / nDotRayDirection;
   if (t < 0)
     return false; // the triangle is behind
 
-  glm::vec3 intersection_point = r.orig + t * r.dir;
+  vec3 intersection_point = r.orig + t * r.dir;
 
   // Step 2: inside-outside test
-  glm::vec3 edge1 = v2 - v1;
-  glm::vec3 vp1 = intersection_point - v1;
-  glm::vec3 C = glm::cross(edge1, vp1);
-  if (glm::dot(N, C) < 0)
+  vec3 edge1 = v2 - v1;
+  vec3 vp1 = intersection_point - v1;
+  vec3 C = cross(edge1, vp1);
+  if (dot(N, C) < 0)
     return false; // P is on the right side
 
-  glm::vec3 edge2 = v3 - v2;
-  glm::vec3 vp2 = intersection_point - v2;
-  C = glm::cross(edge2, vp2);
-  if (glm::dot(N, C) < 0)
+  vec3 edge2 = v3 - v2;
+  vec3 vp2 = intersection_point - v2;
+  C = cross(edge2, vp2);
+  if (dot(N, C) < 0)
     return false;
 
-  glm::vec3 edge3 = v1 - v3;
-  glm::vec3 vp3 = intersection_point - v3;
-  C = glm::cross(edge3, vp3);
-  if (glm::dot(N, C) < 0)
+  vec3 edge3 = v1 - v3;
+  vec3 vp3 = intersection_point - v3;
+  C = cross(edge3, vp3);
+  if (dot(N, C) < 0)
     return false;
 
   dist = t;
   return true;
 }
 
-void compensate_float_rounding_error(Ray &ray, const glm::vec3 &normal) {
-  if (glm::dot(ray.dir, normal) < 0.0f)
+void compensate_float_rounding_error(Ray &ray, const vec3 &normal) {
+  if (dot(ray.dir, normal) < 0.0f)
     ray.orig -= 0.01f * normal;
   else
     ray.orig += 0.01f * normal;
 }
 
-glm::vec4 Render::compute_light(glm::vec3 direction, glm::vec4 lightcolor,
-                                glm::vec3 normal, glm::vec3 halfvec,
-                                glm::vec4 diffuse, glm::vec4 specular,
-                                float shininess) {
-  float n_dot_l = glm::dot(normal, direction);
-  glm::vec4 lambert = diffuse * std::max(n_dot_l, 0.0f);
+vec4 Render::compute_light(vec3 direction, vec4 lightcolor, vec3 normal,
+                           vec3 halfvec, vec4 diffuse, vec4 specular,
+                           float shininess) {
+  float n_dot_l = dot(normal, direction);
+  vec4 lambert = diffuse * std::max(n_dot_l, 0.0f);
 
-  float n_dot_h = glm::dot(normal, halfvec);
-  glm::vec4 phong = specular * pow(std::max(n_dot_h, 0.0f), shininess);
+  float n_dot_h = dot(normal, halfvec);
+  vec4 phong = specular * pow(std::max(n_dot_h, 0.0f), shininess);
 
   return lightcolor * (lambert + phong);
 }
 
-Color Render::compute_shading(const glm::vec3 &point, const glm::vec3 &normal,
+Color Render::compute_shading(const vec3 &point, const vec3 &normal,
                               const Material &m) {
-  glm::vec4 finalcolor = {0.0f, 0.0f, 0.0f, 0.0f};
+  vec4 finalcolor = {0.0f, 0.0f, 0.0f, 0.0f};
 
-  glm::vec3 direction, half;
-  glm::vec3 eyedirn = glm::normalize(s.eye_init - point);
+  vec3 direction, half;
+  vec3 eyedirn = normalize(s.eye_init - point);
 
   for (auto &i : s.direct_lights) {
     Ray shadow_ray(point, -i.dir);
     compensate_float_rounding_error(shadow_ray, normal);
 
-    glm::vec3 hit_point;
+    vec3 hit_point;
     size_t index;
     if (!cast_ray(shadow_ray, hit_point, index)) {
-      direction = glm::normalize(i.dir);
-      half = glm::normalize(direction + eyedirn);
+      direction = normalize(i.dir);
+      half = normalize(direction + eyedirn);
       finalcolor += compute_light(direction, i.color, normal, half, m.diffuse,
                                   m.specular, m.shininess);
     }
   }
 
   for (auto &i : s.point_lights) {
-    glm::vec3 lightdir = i.pos - point;
+    vec3 lightdir = i.pos - point;
     Ray shadow_ray(point, lightdir);
     compensate_float_rounding_error(shadow_ray, normal);
 
-    float dist = glm::length(lightdir);
-    glm::vec3 hit_point;
+    float dist = length(lightdir);
+    vec3 hit_point;
     size_t index;
     bool is_intersection = false;
     if (cast_ray(shadow_ray, hit_point, index)) {
-      is_intersection = dist > glm::length(i.pos - hit_point);
+      is_intersection = dist > length(i.pos - hit_point);
     }
 
     if (!is_intersection) {
-      direction = glm::normalize(lightdir);
-      half = glm::normalize(direction + eyedirn);
+      direction = normalize(lightdir);
+      half = normalize(direction + eyedirn);
       Color color = compute_light(direction, i.color, normal, half, m.diffuse,
                                   m.specular, m.shininess);
       float a = s.attenuation[0] + s.attenuation[1] * dist +
@@ -472,8 +476,7 @@ Color Render::compute_shading(const glm::vec3 &point, const glm::vec3 &normal,
   return finalcolor;
 }
 
-bool Render::cast_ray(const Ray &ray, glm::vec3 &intersection_point,
-                      size_t &index) {
+bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, size_t &index) {
   bool is_intersection = false;
   float dist = std::numeric_limits<float>::max(),
         d = std::numeric_limits<float>::max();
@@ -522,28 +525,28 @@ bool Render::cast_ray(const Ray &ray, glm::vec3 &intersection_point,
   return is_intersection;
 }
 
-glm::vec3 interpolate_normal(const TriangleNormals &triangle,
-                             const glm::vec3 &intersection_point) {
-  glm::vec3 v0v1 = triangle.vertices[1] - triangle.vertices[0];
-  glm::vec3 v0v2 = triangle.vertices[2] - triangle.vertices[0];
+vec3 interpolate_normal(const TriangleNormals &triangle,
+                        const vec3 &intersection_point) {
+  vec3 v0v1 = triangle.vertices[1] - triangle.vertices[0];
+  vec3 v0v2 = triangle.vertices[2] - triangle.vertices[0];
 
-  glm::vec3 normal = glm::cross(v0v1, v0v2);
-  float denom = glm::dot(normal, normal);
+  vec3 normal = cross(v0v1, v0v2);
+  float denom = dot(normal, normal);
 
-  glm::vec3 edge1 = triangle.vertices[2] - triangle.vertices[1];
-  glm::vec3 vp1 = intersection_point - triangle.vertices[1];
-  glm::vec3 C1 = glm::cross(edge1, vp1);
-  float u = glm::dot(normal, C1) / denom;
+  vec3 edge1 = triangle.vertices[2] - triangle.vertices[1];
+  vec3 vp1 = intersection_point - triangle.vertices[1];
+  vec3 C1 = cross(edge1, vp1);
+  float u = dot(normal, C1) / denom;
 
-  glm::vec3 edge2 = triangle.vertices[0] - triangle.vertices[2];
-  glm::vec3 vp2 = intersection_point - triangle.vertices[2];
-  glm::vec3 C2 = glm::cross(edge2, vp2);
-  float v = glm::dot(normal, C2) / denom;
+  vec3 edge2 = triangle.vertices[0] - triangle.vertices[2];
+  vec3 vp2 = intersection_point - triangle.vertices[2];
+  vec3 C2 = cross(edge2, vp2);
+  float v = dot(normal, C2) / denom;
 
-  glm::vec3 result = u * triangle.normals[0] + v * triangle.normals[1] +
-                     (1 - u - v) * triangle.normals[2];
+  vec3 result = u * triangle.normals[0] + v * triangle.normals[1] +
+                (1 - u - v) * triangle.normals[2];
 
-  return glm::normalize(result);
+  return normalize(result);
 }
 
 Color mix_color(const Color &self_color, const Color &refl_color,
@@ -560,9 +563,9 @@ Color Render::trace(const Ray &ray, int curr_depth) {
   if (++curr_depth == s.depth)
     return result;
 
-  glm::vec3 intersection_point;
-  glm::vec3 normal;
-  glm::vec4 specular;
+  vec3 intersection_point;
+  vec3 normal;
+  vec4 specular;
 
   size_t i = 0;
   if (!cast_ray(ray, intersection_point, i))
@@ -574,15 +577,14 @@ Color Render::trace(const Ray &ray, int curr_depth) {
     Sphere &hit_sphere = s.spheres[hit_obj.index];
     specular = hit_sphere.material.specular;
 
-    // normal = glm::normalize(intersection_point - hit_sphere.pos);
+    // normal = normalize(intersection_point - hit_sphere.pos);
     // normal =
-    // glm::normalize(glm::mat3(glm::transpose(hit_sphere.inverted_transform)) *
+    // normalize(mat3(transpose(hit_sphere.inverted_transform)) *
     // normal);
 
-    glm::vec4 p = hit_sphere.transform * glm::vec4(intersection_point, 1.0f);
-    normal = glm::normalize(
-        glm::mat3(glm::transpose(hit_sphere.inverted_transform)) *
-        (glm::vec3(p) - hit_sphere.pos));
+    vec4 p = hit_sphere.transform * vec4(intersection_point, 1.0f);
+    normal = normalize(mat3(transpose(hit_sphere.inverted_transform)) *
+                       (vec3(p) - hit_sphere.pos));
 
     result = compute_shading(intersection_point, normal, hit_sphere.material);
     break;
@@ -606,7 +608,7 @@ Color Render::trace(const Ray &ray, int curr_depth) {
     return result;
   }
 
-  Ray secondary_ray(intersection_point, glm::reflect(ray.dir, normal));
+  Ray secondary_ray(intersection_point, reflect(ray.dir, normal));
   compensate_float_rounding_error(secondary_ray, normal);
   result += specular * trace(secondary_ray, curr_depth);
   // result = mix_color(result, trace(secondary_ray, curr_depth), specular);
@@ -629,11 +631,11 @@ void Render::raytracer_process(size_t start, size_t end) {
     size_t x = i % s.width;
     size_t y = i / s.width;
 
-    float tan_theta = glm::tan(glm::radians(s.fovy) / 2);
+    float tan_theta = tan(radians(s.fovy) / 2);
     float a = (2 * (x + 0.5f) / static_cast<float>(s.width) - 1) * tan_theta *
               s.aspect;
     float b = (1 - 2 * (y + 0.5f) / static_cast<float>(s.height)) * tan_theta;
-    glm::vec3 dir = glm::normalize(a * s.u + b * s.v - s.w);
+    vec3 dir = normalize(a * s.u + b * s.v - s.w);
 
     Color c = trace(Ray(s.eye_init, dir));
 
