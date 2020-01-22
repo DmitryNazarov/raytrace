@@ -48,7 +48,15 @@ vec3 cross(const vec3 &a, const vec3 &b) {
   return vec3(x, y, z);
 }
 
-mat3 transpose(const mat3 &m) { return mat3(); }
+mat3 transpose(const mat3 &m) {
+  mat3 result;
+  for (size_t i = 0; i < 9; ++i) {
+    size_t row = i % 3, col = i / 3;
+    result[row][col] = m[col][row];
+  }
+
+  return result;
+}
 
 float determinant(const mat3 &m) { return 0.0f; }
 

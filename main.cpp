@@ -1,19 +1,5 @@
 #include "main.h"
 
-void debugMAT(const mat4 &t) {
-  std::cout << "T:" << std::setw(4) << t[0][0] << " " << std::setw(4) << t[1][0]
-            << " " << std::setw(4) << t[2][0] << " " << std::setw(4) << t[3][0]
-            << std::endl;
-  std::cout << "T:" << std::setw(4) << t[0][1] << " " << std::setw(4) << t[1][1]
-            << " " << std::setw(4) << t[2][1] << " " << std::setw(4) << t[3][1]
-            << std::endl;
-  std::cout << "T:" << std::setw(4) << t[0][2] << " " << std::setw(4) << t[1][2]
-            << " " << std::setw(4) << t[2][2] << " " << std::setw(4) << t[3][2]
-            << std::endl;
-  std::cout << "T:" << std::setw(4) << t[0][3] << " " << std::setw(4) << t[1][3]
-            << " " << std::setw(4) << t[2][3] << " " << std::setw(4) << t[3][3]
-            << std::endl;
-}
 
 Render::Render(const Settings &s) : s(s) {
   if (!font.loadFromFile("times.ttf"))
@@ -23,8 +9,9 @@ Render::Render(const Settings &s) : s(s) {
                               static_cast<unsigned>(s.height)),
                 "Ray tracer", sf::Style::Titlebar | sf::Style::Close);
 
-  texture.create(static_cast<unsigned>(s.width),
-                 static_cast<unsigned>(s.height));
+  if (!texture.create(static_cast<unsigned>(s.width),
+                      static_cast<unsigned>(s.height)))
+    throw std::runtime_error("texture creation fail");
 
   pix_count = s.width * s.height;
 
@@ -710,9 +697,9 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-     Render
-     r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\scene3.test"));
-    //Render r(read_settings(
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
+                           "hw3\\raytrace\\testscenes\\scene3.test"));
+    // Render r(read_settings(
     //    "/home/dev/Work/github/raytrace/testscenes/scene00.test"));
     r.update();
   } catch (std::exception &e) {

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-project(RayTracer)
+project(RayTracer VERSION 1.0.0)
 
 set(GLM_INCLUDE_DIR "glm")
 
@@ -17,11 +17,12 @@ ENDIF()
 find_package(Threads)
 
 set(SOURCE
-	transform.cpp
-	main.cpp
-    threadpool.cpp
+  transform.cpp
+  main.cpp
+  threadpool.cpp
 )
 
+#Raytracer target
 add_executable(${PROJECT_NAME} WIN32 ${SOURCE})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${GLM_INCLUDE_DIR})
@@ -33,3 +34,15 @@ ELSE()
 ENDIF()
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+
+#Raytracer tests target
+add_subdirectory(googletest)
+
+set(TEST_SOURCES
+  transform.cpp
+  Tests/test.cpp
+)
+
+add_executable(${PROJECT_NAME}_test ${TEST_SOURCES})
+target_include_directories(${PROJECT_NAME}_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${gtest_build_include_dirs} ${GLM_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME}_test gtest)
