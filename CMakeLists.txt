@@ -36,13 +36,16 @@ ENDIF()
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
 
 #Raytracer tests target
+IF (WIN32)
+  set(gtest_force_shared_crt ON)
+ENDIF()
 add_subdirectory(googletest)
 
 set(TEST_SOURCES
+  tests/test.cpp
   transform.cpp
-  Tests/test.cpp
 )
 
 add_executable(${PROJECT_NAME}_test ${TEST_SOURCES})
-target_include_directories(${PROJECT_NAME}_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${gtest_build_include_dirs} ${GLM_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME}_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/include ${GLM_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME}_test gtest)

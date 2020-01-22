@@ -1,6 +1,5 @@
 #include <type_traits>
 #define _USE_MATH_DEFINES
-#include <array>
 #include <math.h>
 
 #include <glm/glm.hpp>

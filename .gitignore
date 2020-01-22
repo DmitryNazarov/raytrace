@@ -33,4 +33,9 @@
 
 build-debug
 build-release
+SFML-2.5.1
+out
+googletest
+glm
+.vs
 *.ttf

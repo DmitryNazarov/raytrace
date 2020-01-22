@@ -50,8 +50,8 @@ vec3 cross(const vec3 &a, const vec3 &b) {
 
 mat3 transpose(const mat3 &m) {
   mat3 result;
-  for (size_t i = 0; i < 9; ++i) {
-    size_t row = i % 3, col = i / 3;
+  for (int i = 0; i < 9; ++i) {
+    int row = i % 3, col = i / 3;
     result[row][col] = m[col][row];
   }
 
@@ -59,14 +59,14 @@ mat3 transpose(const mat3 &m) {
 }
 
 template <int N>
-mat<N - 1> create_submatrix(const mat<N> &m, size_t skip_column,
-                                   size_t skip_row) {
+mat<N - 1> create_submatrix(const mat<N> &m, int skip_column,
+                                   int skip_row) {
   mat<N - 1> result;
   bool skipped = false;
-  for (size_t i = 0; i < N * N; ++i) {
-    size_t row = i % N, col = i / N;
+  for (int i = 0; i < N * N; ++i) {
+    int row = i % N, col = i / N;
     if (row >= skip_row) {
-      result[col][row - 1] = m[col][row];
+      result[col][row] = m[col][row + 1];
       skipped = true;
     }
     if (col >= skip_column) {
@@ -89,7 +89,7 @@ float determinant(const mat2 &m) {
 
 float determinant(const mat3 &m) {
   float result = 0.f;
-  for (size_t i = 0; i < 3; ++i) {
+  for (int i = 0; i < 3; ++i) {
     int sign = -i % 2;
     mat2 sub_m = create_submatrix(m, 0, i);
     result += sign * determinant(sub_m);

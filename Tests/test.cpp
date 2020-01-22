@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
 #include <transform.h>
+#include <sstream>
 
 using namespace Transform;
 
-std::string debug_matrix(const mat4 &t) {
+std::string debug_matrix(const mat3 &t) {
   std::ostringstream ss;
   ss << std::setw(4) << t[0][0] << " " << std::setw(4) << t[1][0] << " "
      << std::setw(4) << t[2][0] << std::endl;
@@ -22,8 +23,8 @@ void compare_vectors(const vec3 &v1, const vec3 &v2) {
 }
 
 void compare_matrices(const mat3 &m1, const mat3 &m2) {
-  for (size_t i = 0; i < 9; ++i) {
-    size_t row = i % 3, col = i / 3;
+  for (int i = 0; i < 9; ++i) {
+    int row = i % 3, col = i / 3;
     ASSERT_FLOAT_EQ(m1[col][row], m2[col][row])
         << "col: " << col << " row: " << row << std::endl
         << debug_matrix(m1);
