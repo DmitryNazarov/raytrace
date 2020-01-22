@@ -78,6 +78,11 @@ TEST(test_group_1, transpose_3) {
   compare_matrices(transpose(transpose(mat3(1.f))), mat3(1.f));
 }
 
+TEST(test_group_1, determinant) {
+  mat3 m(2.f, 6.f, 5.f, 5.f, 3.f, -2.f, 7.f, 4.f, -3.f);
+  ASSERT_FLOAT_EQ(determinant(m), -1.f);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

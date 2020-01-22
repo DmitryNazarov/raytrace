@@ -105,6 +105,8 @@ namespace Transform {
 // using mat4 = mat<4>;
 using vec3 = glm::vec3;
 using vec4 = glm::vec4;
+template<int N> using mat = glm::mat<N, N, glm::f32, glm::defaultp>;
+using mat2 = glm::mat2;
 using mat3 = glm::mat3;
 using mat4 = glm::mat4;
 
@@ -118,6 +120,6 @@ float length(const vec3 &v);
 mat3 transpose(const mat3 &m);
 float radians(float angle);
 float determinant(const mat3& m);
-mat3 inverse(const mat3 &m);
+mat4 inverse(const mat4 &m);
 vec3 reflect(const vec3& v, const vec3& normal);
 }; // namespace Transform

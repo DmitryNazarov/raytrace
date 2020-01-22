@@ -1,7 +1,7 @@
 #include "transform.h"
 
 namespace Transform {
-mat4 rotate(const mat4& m, const float degrees, const vec3 &axis) {
+mat4 rotate(const mat4 &m, const float degrees, const vec3 &axis) {
   float rad = radians(degrees);
   float cos_a = cos(rad);
   float sin_a = sin(rad);
@@ -18,12 +18,12 @@ mat4 rotate(const mat4& m, const float degrees, const vec3 &axis) {
   return m * mat4(rotate);
 }
 
-mat4 scale(const mat4& m, const vec3 &v) {
+mat4 scale(const mat4 &m, const vec3 &v) {
   mat4 scale = mat4(v.x, 0, 0, 0, 0, v.y, 0, 0, 0, 0, v.z, 0, 0, 0, 0, 1);
   return m * scale;
 }
 
-mat4 translate(const mat4& m, const vec3& v) {
+mat4 translate(const mat4 &m, const vec3 &v) {
   mat4 translate = mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, v.x, v.y, v.z, 1);
   return m * translate;
 }
@@ -58,14 +58,51 @@ mat3 transpose(const mat3 &m) {
   return result;
 }
 
-float determinant(const mat3 &m) { return 0.0f; }
+template <int N>
+mat<N - 1> create_submatrix(const mat<N> &m, size_t skip_column,
+                                   size_t skip_row) {
+  mat<N - 1> result;
+  bool skipped = false;
+  for (size_t i = 0; i < N * N; ++i) {
+    size_t row = i % N, col = i / N;
+    if (row >= skip_row) {
+      result[col][row - 1] = m[col][row];
+      skipped = true;
+    }
+    if (col >= skip_column) {
+      result[col - 1][row] = m[col][row];
+      skipped = true;
+    }
 
-mat3 inverse(const mat3 &m) {
-  return m;
+    if (!skipped)
+      result[col][row] = m[col][row];
+
+    skipped = false;
+  }
+
+  return result;
+}
+
+float determinant(const mat2 &m) {
+  return m[0][0] * m[1][1] - m[1][0] * m[0][1];
+}
+
+float determinant(const mat3 &m) {
+  float result = 0.f;
+  for (size_t i = 0; i < 3; ++i) {
+    int sign = -i % 2;
+    mat2 sub_m = create_submatrix(m, 0, i);
+    result += sign * determinant(sub_m);
+  }
+  return 0.0f;
+}
+
+mat4 inverse(const mat4 &m) {
+  mat4 result;
+  return result;
 }
 
 vec3 reflect(const vec3 &incident, const vec3 &normal) {
   return incident - normal * dot(normal, incident) * 2.0f;
 }
-
 }; // namespace Transform
