@@ -58,51 +58,22 @@ mat3 transpose(const mat3 &m) {
   return result;
 }
 
-template <int N>
-mat<N - 1> create_submatrix(const mat<N> &m, int skip_column,
-                                   int skip_row) {
-  mat<N - 1> result;
-  bool skipped = false;
-  for (int i = 0; i < N * N; ++i) {
-    int row = i % N, col = i / N;
-    if (row >= skip_row) {
-      result[col][row] = m[col][row + 1];
-      skipped = true;
-    }
-    if (col >= skip_column) {
-      result[col - 1][row] = m[col][row];
-      skipped = true;
-    }
-
-    if (!skipped)
-      result[col][row] = m[col][row];
-
-    skipped = false;
-  }
-
-  return result;
-}
-
-float determinant(const mat2 &m) {
-  return m[0][0] * m[1][1] - m[1][0] * m[0][1];
-}
-
-float determinant(const mat3 &m) {
-  float result = 0.f;
-  for (int i = 0; i < 3; ++i) {
-    int sign = -i % 2;
-    mat2 sub_m = create_submatrix(m, 0, i);
-    result += sign * determinant(sub_m);
-  }
-  return 0.0f;
-}
-
 mat4 inverse(const mat4 &m) {
   mat4 result;
+  float det = determinant(m);
+
+  if (det == 0)
+    return result;
+
   return result;
 }
 
 vec3 reflect(const vec3 &incident, const vec3 &normal) {
   return incident - normal * dot(normal, incident) * 2.0f;
 }
+
+template <> float determinant(const mat<2> &m) {
+  return m[0][0] * m[1][1] - m[1][0] * m[0][1];
+}
+
 }; // namespace Transform

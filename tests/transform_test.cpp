@@ -4,14 +4,16 @@
 
 using namespace Transform;
 
-std::string debug_matrix(const mat3 &t) {
+template<int N>
+std::string debug_matrix(const mat<N> &t) {
   std::ostringstream ss;
-  ss << std::setw(4) << t[0][0] << " " << std::setw(4) << t[1][0] << " "
-     << std::setw(4) << t[2][0] << std::endl;
-  ss << std::setw(4) << t[0][1] << " " << std::setw(4) << t[1][1] << " "
-     << std::setw(4) << t[2][1] << std::endl;
-  ss << std::setw(4) << t[0][2] << " " << std::setw(4) << t[1][2] << " "
-     << std::setw(4) << t[2][2] << std::endl;
+  for (int i = 0; i < N; ++i) {
+    ss << std::setw(4);
+    for (int j = 0; j < N; ++j) {
+      ss << t[i][j] << " ";
+    }
+    ss << std::endl;
+  }
 
   return ss.str();
 }
@@ -22,9 +24,10 @@ void compare_vectors(const vec3 &v1, const vec3 &v2) {
   ASSERT_FLOAT_EQ(v1.z, v2.z);
 }
 
-void compare_matrices(const mat3 &m1, const mat3 &m2) {
-  for (int i = 0; i < 9; ++i) {
-    int row = i % 3, col = i / 3;
+template <int N>
+void compare_matrices(const mat<N> &m1, const mat<N> &m2) {
+  for (int i = 0; i < N * N; ++i) {
+    int row = i % N, col = i / N;
     ASSERT_FLOAT_EQ(m1[col][row], m2[col][row])
         << "col: " << col << " row: " << row << std::endl
         << debug_matrix(m1);
@@ -79,12 +82,14 @@ TEST(test_group_1, transpose_3) {
   compare_matrices(transpose(transpose(mat3(1.f))), mat3(1.f));
 }
 
+TEST(test_group_1, create_submatrix) {
+  mat3 m(2.f, 6.f, 5.f, 5.f, 3.f, -2.f, 7.f, 4.f, -3.f);
+  mat2 sub_m = create_submatrix(m, 1, 1);
+  debug_matrix(sub_m);
+  compare_matrices(sub_m, mat2(2.f, 5.f, 7.f, -3.f));
+}
+
 TEST(test_group_1, determinant) {
   mat3 m(2.f, 6.f, 5.f, 5.f, 3.f, -2.f, 7.f, 4.f, -3.f);
   ASSERT_FLOAT_EQ(determinant(m), -1.f);
-}
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }
