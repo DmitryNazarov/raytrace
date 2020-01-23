@@ -1,6 +1,7 @@
 #include <type_traits>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <sstream>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -111,6 +112,19 @@ using mat2 = glm::mat2;
 using mat3 = glm::mat3;
 using mat4 = glm::mat4;
 
+template<int N> [[nodiscard]]
+std::string debug_matrix(const mat<N>& t) {
+  std::ostringstream ss;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      ss << std::setw(4) << t[j][i] << " ";
+    }
+    ss << std::endl;
+  }
+
+  return ss.str();
+}
+
 mat4 rotate(const mat4 &m, const float degrees, const vec3 &axis);
 mat4 scale(const mat4 &m, const vec3 &v);
 mat4 translate(const mat4 &m, const vec3 &v);
@@ -118,9 +132,7 @@ vec3 normalize(const vec3 &v);
 vec3 cross(const vec3 &a, const vec3 &b);
 float dot(const vec3 &a, const vec3 &b);
 float length(const vec3 &v);
-mat3 transpose(const mat3 &m);
 float radians(float angle);
-mat4 inverse(const mat4 &m);
 vec3 reflect(const vec3 &v, const vec3 &normal);
 
 template <int N>
@@ -151,7 +163,7 @@ mat<N - 1> create_submatrix(const mat<N> &m, int skip_column, int skip_row) {
 template <int N> float determinant(const mat<N> &m) {
   float result = 0.f;
   for (int i = 0; i < N; ++i) {
-    int sign = -i % 2;
+    int sign = i % 2 ? -1 : 1;
     auto sub_m = create_submatrix(m, 0, i);
     result += sign * determinant(sub_m);
   }
@@ -159,5 +171,36 @@ template <int N> float determinant(const mat<N> &m) {
 }
 
 template <> float determinant(const mat<2> &m);
+
+template <int N>
+mat<N> transpose(const mat<N>& m) {
+  mat<N> result;
+  for (int i = 0; i < N*N; ++i) {
+    int row = i % N, col = i / N;
+    result[row][col] = m[col][row];
+  }
+
+  return result;
+}
+
+template <int N>
+mat<N> inverse(const mat<N>& m) {
+  mat4 result;
+
+  float det = determinant(m);
+  if (det == 0)
+    return m;
+
+  mat<N> complement_matrix;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      complement_matrix[i][j] = powf(-1.0f, static_cast<float>(i + j))* determinant(create_submatrix(m, i, j));
+    }
+  }
+
+  result = 1 / det * transpose(complement_matrix);
+
+  return result;
+}
 
 }; // namespace Transform

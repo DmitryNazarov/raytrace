@@ -48,26 +48,6 @@ vec3 cross(const vec3 &a, const vec3 &b) {
   return vec3(x, y, z);
 }
 
-mat3 transpose(const mat3 &m) {
-  mat3 result;
-  for (int i = 0; i < 9; ++i) {
-    int row = i % 3, col = i / 3;
-    result[row][col] = m[col][row];
-  }
-
-  return result;
-}
-
-mat4 inverse(const mat4 &m) {
-  mat4 result;
-  float det = determinant(m);
-
-  if (det == 0)
-    return result;
-
-  return result;
-}
-
 vec3 reflect(const vec3 &incident, const vec3 &normal) {
   return incident - normal * dot(normal, incident) * 2.0f;
 }
