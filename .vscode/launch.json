@@ -11,7 +11,7 @@
             "target": "${workspaceFolder}/build/RayTracer",
             "cwd": "${workspaceFolder}/build",
             "valuesFormatting": "parseText",
-            "preLaunchTask": "Build"
+            "preLaunchTask": "Build debug"
         }
     ]
 }

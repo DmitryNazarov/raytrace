@@ -63,6 +63,10 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "bit": "cpp"
+        "bit": "cpp",
+        "*.ipp": "cpp",
+        "future": "cpp",
+        "forward_list": "cpp",
+        "unordered_set": "cpp"
     }
 }

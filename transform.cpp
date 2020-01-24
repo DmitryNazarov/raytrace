@@ -1,16 +1,8 @@
-// Transform.cpp: implementation of the Transform class.
-
-// Note: when you construct a matrix using mat4() or mat3(), it will be
-// COLUMN-MAJOR Keep this in mind in readfile.cpp and display.cpp See FAQ for
-// more details or if you're having problems.
-
 #include "transform.h"
-#include <stdio.h>
 
-// Helper rotation function.  Please implement this.
-glm::mat3 Transform::rotate(const float degrees, const glm::vec3 &axis) {
-  glm::mat3 result;
-  float rad = glm::radians(degrees);
+namespace Transform {
+mat4 rotate(const mat4 &m, const float degrees, const vec3 &axis) {
+  float rad = radians(degrees);
   float cos_a = cos(rad);
   float sin_a = sin(rad);
 
@@ -18,90 +10,49 @@ glm::mat3 Transform::rotate(const float degrees, const glm::vec3 &axis) {
   const float &y = axis[1];
   const float &z = axis[2];
 
-  glm::mat3 m2 =
-      glm::mat3(x * x, x * y, x * z, x * y, y * y, y * z, x * z, y * z, z * z);
-  glm::mat3 m3 = glm::mat3(0., z, -y, -z, 0., x, y, -x, 0.);
+  mat3 m2 = mat3(x * x, x * y, x * z, x * y, y * y, y * z, x * z, y * z, z * z);
+  mat3 m3 = mat3(0., z, -y, -z, 0., x, y, -x, 0.);
 
-  result = glm::mat3(1.0) * cos_a + m2 * (1 - cos_a) + m3 * sin_a;
+  mat3 rotate = mat3(1.0) * cos_a + m2 * (1 - cos_a) + m3 * sin_a;
 
-  return result;
+  return m * mat4(rotate);
 }
 
-void Transform::left(float degrees, glm::vec3 &eye, glm::vec3 &up) {
-  glm::vec3 w = glm::normalize(eye);
-  glm::vec3 u = glm::normalize(glm::cross(up, w));
-  glm::vec3 v = glm::cross(w, u);
-
-  eye = rotate(degrees, v) * eye;
-  up = rotate(degrees, v) * up;
+mat4 scale(const mat4 &m, const vec3 &v) {
+  mat4 scale = mat4(v.x, 0, 0, 0, 0, v.y, 0, 0, 0, 0, v.z, 0, 0, 0, 0, 1);
+  return m * scale;
 }
 
-void Transform::up(float degrees, glm::vec3 &eye, glm::vec3 &up) {
-  // printf("Coordinates: %.2f, %.2f, %.2f; distance: %.2f\n", eye.x, eye.y,
-  // eye.z,
-  //  sqrt(pow(eye.x, 2) + pow(eye.y, 2) + pow(eye.z, 2)));
-  glm::vec3 w = glm::normalize(eye);
-  glm::vec3 u = -glm::normalize(glm::cross(up, w));
-
-  eye = rotate(degrees, u) * eye;
-  up = rotate(degrees, u) * up;
+mat4 translate(const mat4 &m, const vec3 &v) {
+  mat4 translate = mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, v.x, v.y, v.z, 1);
+  return m * translate;
 }
 
-glm::mat4 Transform::lookAt(const glm::vec3 &eye, const glm::vec3 &center,
-                            const glm::vec3 &up) {
-  glm::vec3 w = glm::normalize(eye - center);
-  glm::vec3 u = glm::normalize(glm::cross(up, w));
-  glm::vec3 v = glm::cross(w, u);
-
-  glm::mat3 r = glm::mat3(u[0], v[0], w[0], u[1], v[1], w[1], u[2], v[2], w[2]);
-  glm::vec3 r_t = r * (center - eye);
-
-  glm::mat4 m = glm::mat4(u[0], v[0], w[0], 0, u[1], v[1], w[1], 0, u[2], v[2],
-                          w[2], 0, r_t[0], r_t[1], r_t[2], 1);
-
-  return m;
+float dot(const vec3 &a, const vec3 &b) {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-glm::mat4 Transform::perspective(float fovy, float aspect, float zNear,
-                                 float zFar) {
-  float theta = fovy / 2;
-  float d = glm::cos(theta) / glm::sin(theta);
+float radians(float angle) { return angle * static_cast<float>(M_PI) / 180.0f; }
 
-  float A = -(zFar + zNear) / (zFar - zNear);
-  float B = -(2 * zFar * zNear) / (zFar - zNear);
+float length(const vec3 &v) { return sqrt(dot(v, v)); }
 
-  glm::mat4 ret =
-      glm::mat4(d / aspect, 0, 0, 0, 0, d, 0, 0, 0, 0, A, -1, 0, 0, B, 0);
-
-  return ret;
+vec3 normalize(const vec3 &v) {
+  return v / length(v);
 }
 
-glm::mat4 Transform::scale(const float &sx, const float &sy, const float &sz) {
-  glm::mat4 ret = glm::mat4(sx, 0, 0, 0, 0, sy, 0, 0, 0, 0, sz, 0, 0, 0, 0, 1);
-
-  return ret;
+vec3 cross(const vec3 &a, const vec3 &b) {
+  float x = a.y * b.z - a.z * b.y;
+  float y = a.z * b.x - a.x * b.z;
+  float z = a.x * b.y - a.y * b.x;
+  return vec3(x, y, z);
 }
 
-glm::mat4 Transform::translate(const float &tx, const float &ty,
-                               const float &tz) {
-  glm::mat4 ret = glm::mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, tx, ty, tz, 1);
-
-  return ret;
+vec3 reflect(const vec3 &incident, const vec3 &normal) {
+  return incident - normal * dot(normal, incident) * 2.0f;
 }
 
-// To normalize the up direction and construct a coordinate frame.
-// As discussed in the lecture.  May be relevant to create a properly
-// orthogonal and normalized up.
-// This function is provided as a helper, in case you want to use it.
-// Using this function (in readfile.cpp or display.cpp) is optional.
-
-glm::vec3 Transform::upvector(const glm::vec3 &up, const glm::vec3 &zvec) {
-  glm::vec3 x = glm::cross(up, zvec);
-  glm::vec3 y = glm::cross(zvec, x);
-  glm::vec3 ret = glm::normalize(y);
-  return ret;
+template <> float determinant(const mat<2> &m) {
+  return m[0][0] * m[1][1] - m[1][0] * m[0][1];
 }
 
-Transform::Transform() {}
-
-Transform::~Transform() {}
+}; // namespace Transform
