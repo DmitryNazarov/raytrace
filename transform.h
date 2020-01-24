@@ -1,5 +1,6 @@
 #include <type_traits>
 #define _USE_MATH_DEFINES
+#include <iomanip>
 #include <math.h>
 #include <sstream>
 
@@ -112,8 +113,8 @@ using mat2 = glm::mat2;
 using mat3 = glm::mat3;
 using mat4 = glm::mat4;
 
-template<int N> [[nodiscard]]
-std::string debug_matrix(const mat<N>& t) {
+template <int N>
+[[nodiscard]] std::string debug_matrix(const mat<N> &t) {
   std::ostringstream ss;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
@@ -164,18 +165,18 @@ template <int N> float determinant(const mat<N> &m) {
   float result = 0.f;
   for (int i = 0; i < N; ++i) {
     int sign = i % 2 ? -1 : 1;
-    auto sub_m = create_submatrix(m, 0, i);
+    auto sub_m = create_submatrix(m, i, j);
     result += sign * determinant(sub_m);
   }
+
   return result;
 }
 
 template <> float determinant(const mat<2> &m);
 
-template <int N>
-mat<N> transpose(const mat<N>& m) {
+template <int N> mat<N> transpose(const mat<N> &m) {
   mat<N> result;
-  for (int i = 0; i < N*N; ++i) {
+  for (int i = 0; i < N * N; ++i) {
     int row = i % N, col = i / N;
     result[row][col] = m[col][row];
   }
@@ -183,8 +184,7 @@ mat<N> transpose(const mat<N>& m) {
   return result;
 }
 
-template <int N>
-mat<N> inverse(const mat<N>& m) {
+template <int N> mat<N> inverse(const mat<N> &m) {
   mat4 result;
 
   float det = determinant(m);
@@ -194,7 +194,8 @@ mat<N> inverse(const mat<N>& m) {
   mat<N> complement_matrix;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
-      complement_matrix[i][j] = powf(-1.0f, static_cast<float>(i + j))* determinant(create_submatrix(m, i, j));
+      int sign = pow(-1, i + j);
+      complement_matrix[i][j] = sign * determinant(create_submatrix(m, i, j));
     }
   }
 
