@@ -164,9 +164,9 @@ mat<N - 1> create_submatrix(const mat<N> &m, int skip_column, int skip_row) {
 template <int N> float determinant(const mat<N> &m) {
   float result = 0.f;
   for (int i = 0; i < N; ++i) {
-    int sign = i % 2 ? -1 : 1;
-    auto sub_m = create_submatrix(m, i, j);
-    result += sign * determinant(sub_m);
+    float sign = powf(-1, static_cast<float>(i));
+    auto sub_m = create_submatrix(m, i, 0);
+    result += sign * m[i][0] * determinant(sub_m);
   }
 
   return result;
@@ -194,13 +194,12 @@ template <int N> mat<N> inverse(const mat<N> &m) {
   mat<N> complement_matrix;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
-      int sign = pow(-1, i + j);
+      float sign = powf(-1, static_cast<float>(i + j + 2));
       complement_matrix[i][j] = sign * determinant(create_submatrix(m, i, j));
     }
   }
 
   result = 1 / det * transpose(complement_matrix);
-
   return result;
 }
 

@@ -37,8 +37,7 @@ float radians(float angle) { return angle * static_cast<float>(M_PI) / 180.0f; }
 float length(const vec3 &v) { return sqrt(dot(v, v)); }
 
 vec3 normalize(const vec3 &v) {
-  auto l = length(v);
-  return vec3(v.x * v.x / l, v.y * v.y / l, v.z * v.z / l);
+  return v / length(v);
 }
 
 vec3 cross(const vec3 &a, const vec3 &b) {

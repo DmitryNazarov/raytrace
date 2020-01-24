@@ -697,10 +697,10 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
-    //                       "hw3\\raytrace\\testscenes\\scene3.test"));
-    Render r(read_settings(
-       "/home/dev/Work/github/raytrace/testscenes/scene3.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
+                           "hw3\\raytrace\\testscenes\\scene3.test"));
+    //Render r(read_settings(
+    //   "/home/dev/Work/github/raytrace/testscenes/scene3.test"));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;
