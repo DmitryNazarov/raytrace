@@ -64,9 +64,13 @@ struct DirectionLight {
 };
 
 struct PointLight {
-  PointLight(const vec3 &pos, const Color &c) : pos(pos), color(c) {}
+  PointLight(const vec3 &pos, const Color &c, const vec3& attenuation) :
+    pos(pos), color(c), attenuation(attenuation)
+  {}
+
   vec3 pos;
   Color color;
+  vec3 attenuation{ 1.0f, 0.0f, 0.0f };
 };
 
 enum ObjectType { TRIANGLE, TRIANGLE_NORMALS, SPHERE };
@@ -97,8 +101,6 @@ struct Settings {
 
   std::vector<Object> objects;
 
-  float attenuation[3] = {1.0f, .0f, .0f};
-
   size_t threads_count = std::thread::hardware_concurrency() - 1;
 };
 
@@ -125,7 +127,7 @@ private:
   void render_handling();
   bool cast_ray(const Ray &ray, vec3 &intersection_point, size_t &index);
   Color compute_shading(const vec3 &point, const vec3 &normal,
-                        const Material &m);
+    size_t obj_index, const Material &m);
   vec4 compute_light(vec3 direction, vec4 lightcolor, vec3 normal, vec3 halfvec,
                      vec4 diffuse, vec4 specular, float shininess);
 

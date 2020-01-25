@@ -51,6 +51,7 @@ Settings read_settings(const std::string &filename) {
   Color specular{0.0f, 0.0f, 0.0f, 0.0f};
   Color emission{0.0f, 0.0f, 0.0f, 0.0f};
   float shininess = .0;
+  vec3 attenuation{ 1.0f, 0.0f, 0.0f };
 
   std::string str, cmd;
   std::ifstream in(filename);
@@ -172,8 +173,8 @@ Settings read_settings(const std::string &filename) {
                              vec4(vertices[values[1]], 1.0f));
         t.vertices.push_back(transfstack.top() *
                              vec4(vertices[values[2]], 1.0f));
-        t.normal = normalize(cross(t.vertices[1] - t.vertices[0],
-                                   t.vertices[2] - t.vertices[0]));
+        t.normal = normalize(cross(t.vertices[2] - t.vertices[0],
+          t.vertices[1] - t.vertices[0]));
         t.material.ambient = ambient;
         t.material.diffuse = diffuse;
         t.material.specular = specular;
@@ -224,7 +225,7 @@ Settings read_settings(const std::string &filename) {
       if (readvals(ss, 6, values)) {
         auto pos = vec3(values[0], values[1], values[2]);
         auto c = Color(values[3], values[4], values[5], 1.0f);
-        settings.point_lights.emplace_back(pos, c);
+        settings.point_lights.emplace_back(pos, c, attenuation);
       }
     } else if (cmd == "ambient") {
       float values[3];
@@ -234,9 +235,9 @@ Settings read_settings(const std::string &filename) {
     } else if (cmd == "attenuation") {
       float values[3];
       if (readvals(ss, 3, values)) {
-        settings.attenuation[0] = values[0];
-        settings.attenuation[1] = values[1];
-        settings.attenuation[2] = values[2];
+        attenuation[0] = values[0];
+        attenuation[1] = values[1];
+        attenuation[2] = values[2];
       }
     } else if (cmd == "diffuse") {
       float values[3];
@@ -415,7 +416,7 @@ vec4 Render::compute_light(vec3 direction, vec4 lightcolor, vec3 normal,
 }
 
 Color Render::compute_shading(const vec3 &point, const vec3 &normal,
-                              const Material &m) {
+                              size_t obj_index, const Material &m) {
   vec4 finalcolor = {0.0f, 0.0f, 0.0f, 0.0f};
 
   vec3 direction, half;
@@ -426,8 +427,8 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
     compensate_float_rounding_error(shadow_ray, normal);
 
     vec3 hit_point;
-    size_t index;
-    if (!cast_ray(shadow_ray, hit_point, index)) {
+    size_t index = 0;
+    if (!cast_ray(shadow_ray, hit_point, index) && obj_index != index) {
       direction = normalize(i.dir);
       half = normalize(direction + eyedirn);
       finalcolor += compute_light(direction, i.color, normal, half, m.diffuse,
@@ -437,24 +438,24 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
 
   for (auto &i : s.point_lights) {
     vec3 lightdir = i.pos - point;
-    Ray shadow_ray(point, lightdir);
+    direction = normalize(lightdir);
+    Ray shadow_ray(point, direction);
     compensate_float_rounding_error(shadow_ray, normal);
 
     float dist = length(lightdir);
     vec3 hit_point;
-    size_t index;
-    bool is_intersection = false;
-    if (cast_ray(shadow_ray, hit_point, index)) {
-      is_intersection = dist > length(i.pos - hit_point);
+    size_t index = 0;
+    bool is_hidden_by_other_obj = false;
+    if (cast_ray(shadow_ray, hit_point, index) && obj_index != index) {
+      is_hidden_by_other_obj = length(hit_point - point) < dist;
     }
 
-    if (!is_intersection) {
-      direction = normalize(lightdir);
+    if (!is_hidden_by_other_obj) {
       half = normalize(direction + eyedirn);
       Color color = compute_light(direction, i.color, normal, half, m.diffuse,
                                   m.specular, m.shininess);
-      float a = s.attenuation[0] + s.attenuation[1] * dist +
-                s.attenuation[2] * dist * dist;
+      float a = i.attenuation[0] + i.attenuation[1] * dist +
+                i.attenuation[2] * dist * dist;
       finalcolor += color / a;
     }
   }
@@ -539,8 +540,8 @@ vec3 interpolate_normal(const TriangleNormals &triangle,
 Color mix_color(const Color &self_color, const Color &refl_color,
                 const Color &coeff) {
   float r = self_color.r * (1.0f - coeff.r) + refl_color.r * coeff.r;
-  float g = self_color.r * (1.0f - coeff.g) + refl_color.g * coeff.g;
-  float b = self_color.r * (1.0f - coeff.b) + refl_color.b * coeff.b;
+  float g = self_color.g * (1.0f - coeff.g) + refl_color.g * coeff.g;
+  float b = self_color.b * (1.0f - coeff.b) + refl_color.b * coeff.b;
   return Color(r, g, b, self_color.a);
 }
 
@@ -564,30 +565,27 @@ Color Render::trace(const Ray &ray, int curr_depth) {
     Sphere &hit_sphere = s.spheres[hit_obj.index];
     specular = hit_sphere.material.specular;
 
-    // normal = normalize(intersection_point - hit_sphere.pos);
-    // normal =
-    // normalize(mat3(transpose(hit_sphere.inverted_transform)) *
-    // normal);
+    //vec4 p = hit_sphere.transform * vec4(intersection_point, 1.0f);
+    /*normal = normalize(mat3(transpose(hit_sphere.inverted_transform)) *
+      (vec3(p) - hit_sphere.pos));*/
+    vec3 p = hit_sphere.inverted_transform * vec4(intersection_point, 1.0f);
+    normal = normalize(hit_sphere.transform * vec4(normalize(vec3(p) - hit_sphere.pos), 0.f));
 
-    vec4 p = hit_sphere.transform * vec4(intersection_point, 1.0f);
-    normal = normalize(mat3(transpose(hit_sphere.inverted_transform)) *
-                       (vec3(p) - hit_sphere.pos));
-
-    result = compute_shading(intersection_point, normal, hit_sphere.material);
+    result = compute_shading(intersection_point, normal, i, hit_sphere.material);
     break;
   }
   case TRIANGLE: {
     Triangle &hit_triangle = s.triangles[hit_obj.index];
     specular = hit_triangle.material.specular;
     normal = hit_triangle.normal;
-    result = compute_shading(intersection_point, normal, hit_triangle.material);
+    result = compute_shading(intersection_point, normal, i, hit_triangle.material);
     break;
   }
   case TRIANGLE_NORMALS: {
     TriangleNormals &hit_triangle = s.triangle_normals[hit_obj.index];
     specular = hit_triangle.material.specular;
     normal = interpolate_normal(hit_triangle, intersection_point);
-    result = compute_shading(intersection_point, normal, hit_triangle.material);
+    result = compute_shading(intersection_point, normal, i, hit_triangle.material);
     break;
   }
   default:
@@ -597,8 +595,8 @@ Color Render::trace(const Ray &ray, int curr_depth) {
 
   Ray secondary_ray(intersection_point, reflect(ray.dir, normal));
   compensate_float_rounding_error(secondary_ray, normal);
-  result += specular * trace(secondary_ray, curr_depth);
-  // result = mix_color(result, trace(secondary_ray, curr_depth), specular);
+  //result += specular * trace(secondary_ray, curr_depth);
+  result = mix_color(result, trace(secondary_ray, curr_depth), specular);
 
   return result;
 }
@@ -669,7 +667,7 @@ void Render::render_handling() {
       buffer = draw_buffer;
       auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
           std::chrono::system_clock::now() - start_time);
-      text.setString("Completed! " + std::to_string(elapsed.count()) + " ms");
+      text.setString(""); //text.setString("Completed! " + std::to_string(elapsed.count()) + " ms");
     } else {
       int p = static_cast<int>(std::round(static_cast<float>(curr_progress) /
                                           static_cast<float>(pix_count) * 100));
@@ -686,7 +684,7 @@ void Render::render_handling() {
 
 void Render::screeshot() {
   texture.update(window);
-  texture.copyToImage().saveToFile("test.png");
+  texture.copyToImage().saveToFile(s.filename);
 }
 
 int main(int argc, char *argv[]) {
@@ -697,8 +695,21 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
+    //                       "hw3\\raytrace\\testscenes\\scene_test.test"));
+
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
+    //  "hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
+
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
+    //  "hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
     Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
-                           "hw3\\raytrace\\testscenes\\scene3.test"));
+      "hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
+    //  "hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
+    //  "hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
+
     //Render r(read_settings(
     //   "/home/dev/Work/github/raytrace/testscenes/scene3.test"));
     r.update();
