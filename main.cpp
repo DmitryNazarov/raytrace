@@ -398,9 +398,9 @@ bool intersection_triangle(const TriangleNormals &tri, const Ray &r,
 
 void compensate_float_rounding_error(Ray &ray, const vec3 &normal) {
   if (dot(ray.dir, normal) < 0.0f)
-    ray.orig -= 0.01f * normal;
+    ray.orig -= 0.0001f * normal;
   else
-    ray.orig += 0.01f * normal;
+    ray.orig += 0.0001f * normal;
 }
 
 vec4 Render::compute_light(vec3 direction, vec4 lightcolor, vec3 normal,
@@ -565,11 +565,16 @@ Color Render::trace(const Ray &ray, int curr_depth) {
     Sphere &hit_sphere = s.spheres[hit_obj.index];
     specular = hit_sphere.material.specular;
 
-    //vec4 p = hit_sphere.transform * vec4(intersection_point, 1.0f);
+    //vec3 p = hit_sphere.transform * vec4(intersection_point, 1.0f);
     /*normal = normalize(mat3(transpose(hit_sphere.inverted_transform)) *
       (vec3(p) - hit_sphere.pos));*/
+
     vec3 p = hit_sphere.inverted_transform * vec4(intersection_point, 1.0f);
-    normal = normalize(hit_sphere.transform * vec4(normalize(vec3(p) - hit_sphere.pos), 0.f));
+    //normal = normalize(hit_sphere.transform * vec4(normalize(vec3(p) - hit_sphere.pos), 0.f));
+
+    //normal = normalize(mat3(hit_sphere.inverted_transform) * (p - hit_sphere.pos));
+    //normal = normalize(mat3(hit_sphere.transform) * (p - hit_sphere.pos));
+    normal = normalize((p - hit_sphere.pos));
 
     result = compute_shading(intersection_point, normal, i, hit_sphere.material);
     break;
@@ -595,8 +600,8 @@ Color Render::trace(const Ray &ray, int curr_depth) {
 
   Ray secondary_ray(intersection_point, reflect(ray.dir, normal));
   compensate_float_rounding_error(secondary_ray, normal);
-  //result += specular * trace(secondary_ray, curr_depth);
-  result = mix_color(result, trace(secondary_ray, curr_depth), specular);
+  result += specular * trace(secondary_ray, curr_depth);
+  //result = mix_color(result, trace(secondary_ray, curr_depth), specular);
 
   return result;
 }
@@ -695,16 +700,17 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
-    //                       "hw3\\raytrace\\testscenes\\scene_test.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\scene_test.test"));
 
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
-    //  "hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
+
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
+
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
     //  "hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
-      "hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
     //  "hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
