@@ -417,13 +417,13 @@ vec4 Render::compute_light(vec3 direction, vec4 lightcolor, vec3 normal,
 
 Color Render::compute_shading(const vec3 &point, const vec3 &normal,
                               size_t obj_index, const Material &m) {
-  vec4 finalcolor = {0.0f, 0.0f, 0.0f, 0.0f};
+  vec4 finalcolor = {0.0f, 0.0f, 0.0f, 1.0f};
 
   vec3 direction, half;
   vec3 eyedirn = normalize(s.eye_init - point);
 
   for (auto &i : s.direct_lights) {
-    Ray shadow_ray(point, -i.dir);
+    Ray shadow_ray(point, normalize(-i.dir));
     compensate_float_rounding_error(shadow_ray, normal);
 
     vec3 hit_point;
@@ -461,6 +461,8 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
   }
 
   finalcolor += m.ambient + m.emission;
+  if (finalcolor.a > 255)
+    return vec4(vec3(finalcolor), 1.0f);
   return finalcolor;
 }
 
@@ -700,7 +702,7 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\scene_test.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\scene_test.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
@@ -716,8 +718,7 @@ int main(int argc, char *argv[]) {
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
     //  "hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 
-    //Render r(read_settings(
-    //   "/home/dev/Work/github/raytrace/testscenes/scene3.test"));
+    Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;

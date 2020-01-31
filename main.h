@@ -81,7 +81,7 @@ struct Object {
 };
 
 struct Settings {
-  size_t width, height;
+  size_t width = 640, height = 480;
   float aspect;
   int depth = 5;
   std::string filename = "screenshot.png";
