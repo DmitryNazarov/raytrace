@@ -43,6 +43,7 @@ add_subdirectory(googletest)
 
 set(TEST_SOURCES
   tests/transform_test.cpp
+  tests/triangle_test.cpp
   transform.cpp
 )
 

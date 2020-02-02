@@ -1,3 +1,5 @@
+#pragma once
+
 #include <type_traits>
 #define _USE_MATH_DEFINES
 #include <iomanip>

@@ -34,7 +34,7 @@ TEST(math_tests, normalize) {
   compare_vectors(v, vec3(0.57735026f, 0.57735026f, 0.57735026f));
 }
 
-TEST(test_group_1, dot_product_1) {
+TEST(math_tests, dot_product_1) {
   float parallel = dot(vec3(1.f, 0.f, 0.f), vec3(1.f, 0.f, 0.f));
   ASSERT_FLOAT_EQ(parallel, 1.0f);
 }
