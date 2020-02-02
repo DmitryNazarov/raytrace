@@ -128,8 +128,8 @@ private:
   bool cast_ray(const Ray &ray, vec3 &intersection_point, size_t &index);
   Color compute_shading(const vec3 &point, const vec3 &normal,
     size_t obj_index, const Material &m);
-  vec4 compute_light(vec3 direction, vec4 lightcolor, vec3 normal, vec3 halfvec,
-                     vec4 diffuse, vec4 specular, float shininess);
+  vec4 compute_light(const vec3& direction, const vec4& lightcolor, const vec3& normal,
+    const vec3& halfvec, const vec4& diffuse, const vec4& specular, float shininess);
 
 private:
   Settings s;

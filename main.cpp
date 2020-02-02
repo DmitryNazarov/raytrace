@@ -121,27 +121,18 @@ Settings read_settings(const std::string &filename) {
     } else if (cmd == "translate") {
       float values[3];
       if (readvals(ss, 3, values)) {
-        // rightmultiply(translate(values[0], values[1], values[2]),
-        //              transfstack);
-        rightmultiply(
-            translate(mat4(1.0f), vec3(values[0], values[1], values[2])),
-            transfstack);
+        transfstack.top() = glm::translate(transfstack.top(), vec3(values[0], values[1], values[2]));
       }
     } else if (cmd == "scale") {
       float values[3];
       if (readvals(ss, 3, values)) {
-        // rightmultiply(scale(values[0], values[1], values[2]),
-        //               transfstack);
-        rightmultiply(scale(mat4(1.0f), vec3(values[0], values[1], values[2])),
-                      transfstack);
+        transfstack.top() = glm::scale(transfstack.top(), vec3(values[0], values[1], values[2]));
       }
     } else if (cmd == "rotate") {
       float values[4];
       if (readvals(ss, 4, values)) {
         vec3 axis = normalize(vec3(values[0], values[1], values[2]));
-        // rightmultiply(mat4(rotate(values[3], axis)),
-        //               transfstack);
-        rightmultiply(rotate(mat4(1.0f), values[3], axis), transfstack);
+        transfstack.top() = glm::rotate(transfstack.top(), values[3], axis);
       }
     } else if (cmd == "pushTransform") {
       transfstack.push(transfstack.top());
@@ -173,8 +164,8 @@ Settings read_settings(const std::string &filename) {
                              vec4(vertices[values[1]], 1.0f));
         t.vertices.push_back(transfstack.top() *
                              vec4(vertices[values[2]], 1.0f));
-        t.normal = normalize(cross(t.vertices[2] - t.vertices[0],
-          t.vertices[1] - t.vertices[0]));
+        t.normal = normalize(inverse(mat3(transfstack.top())) *
+          cross(t.vertices[1] - t.vertices[0], t.vertices[2] - t.vertices[0]));
         t.material.ambient = ambient;
         t.material.diffuse = diffuse;
         t.material.specular = specular;
@@ -269,7 +260,7 @@ Settings read_settings(const std::string &filename) {
   return settings;
 }
 
-bool intersection_sphere(Sphere &s, const Ray &r, float &dist) {
+bool intersection_sphere(const Sphere &s, const Ray &r, float &dist) {
   vec3 orig = s.inverted_transform * vec4(r.orig, 1.0f);
   vec3 dir = normalize(s.inverted_transform * vec4(r.dir, 0.0f));
 
@@ -316,15 +307,13 @@ bool intersection_triangle(const Triangle &tri, const Ray &r, float &dist) {
   const vec3 &v2 = tri.vertices[1];
   const vec3 &v3 = tri.vertices[2];
 
-  vec3 N = cross(v2 - v1, v3 - v1);
-
   // Step 1: finding intersection_point
-  float nDotRayDirection = dot(N, r.dir);
+  float nDotRayDirection = dot(tri.normal, r.dir);
   if (fabs(nDotRayDirection) < std::numeric_limits<float>::epsilon())
     return false; // they are parallel, so they don't intersect
 
-  float d = dot(N, v1);
-  float t = -(dot(N, r.orig) + d) / nDotRayDirection;
+  float d = dot(tri.normal, v1);
+  float t = -(dot(tri.normal, r.orig) + d) / nDotRayDirection;
   if (t < 0)
     return false; // the triangle is behind
 
@@ -334,19 +323,19 @@ bool intersection_triangle(const Triangle &tri, const Ray &r, float &dist) {
   vec3 edge1 = v2 - v1;
   vec3 vp1 = intersection_point - v1;
   vec3 C = cross(edge1, vp1);
-  if (dot(N, C) < 0)
+  if (dot(tri.normal, C) < 0)
     return false; // P is on the right side
 
   vec3 edge2 = v3 - v2;
   vec3 vp2 = intersection_point - v2;
   C = cross(edge2, vp2);
-  if (dot(N, C) < 0)
+  if (dot(tri.normal, C) < 0)
     return false;
 
   vec3 edge3 = v1 - v3;
   vec3 vp3 = intersection_point - v3;
   C = cross(edge3, vp3);
-  if (dot(N, C) < 0)
+  if (dot(tri.normal, C) < 0)
     return false;
 
   dist = t;
@@ -398,14 +387,14 @@ bool intersection_triangle(const TriangleNormals &tri, const Ray &r,
 
 void compensate_float_rounding_error(Ray &ray, const vec3 &normal) {
   if (dot(ray.dir, normal) < 0.0f)
-    ray.orig -= 0.0001f * normal;
+    ray.orig -= 1e-4f * normal;
   else
-    ray.orig += 0.0001f * normal;
+    ray.orig += 1e-4f * normal;
 }
 
-vec4 Render::compute_light(vec3 direction, vec4 lightcolor, vec3 normal,
-                           vec3 halfvec, vec4 diffuse, vec4 specular,
-                           float shininess) {
+vec4 Render::compute_light(const vec3& direction, const vec4& lightcolor, const vec3& normal,
+  const vec3& halfvec, const vec4& diffuse, const vec4& specular, float shininess)
+{
   float n_dot_l = dot(normal, direction);
   vec4 lambert = diffuse * std::max(n_dot_l, 0.0f);
 
@@ -484,8 +473,7 @@ bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, size_t &index) {
       break;
     }
     case TRIANGLE: {
-      Triangle &t = s.triangles[s.objects[i].index];
-      if (intersection_triangle(t, ray, d)) {
+      if (intersection_triangle(s.triangles[s.objects[i].index], ray, d)) {
         if (d < dist) {
           dist = d;
           index = i;
@@ -495,8 +483,7 @@ bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, size_t &index) {
       break;
     }
     case TRIANGLE_NORMALS: {
-      TriangleNormals &t = s.triangle_normals[s.objects[i].index];
-      if (intersection_triangle(t, ray, d)) {
+      if (intersection_triangle(s.triangle_normals[s.objects[i].index], ray, d)) {
         if (d < dist) {
           dist = d;
           index = i;
@@ -602,8 +589,8 @@ Color Render::trace(const Ray &ray, int curr_depth) {
 
   Ray secondary_ray(intersection_point, reflect(ray.dir, normal));
   compensate_float_rounding_error(secondary_ray, normal);
-  result += specular * trace(secondary_ray, curr_depth);
-  //result = mix_color(result, trace(secondary_ray, curr_depth), specular);
+  //result += specular * trace(secondary_ray, curr_depth);
+  result = mix_color(result, trace(secondary_ray, curr_depth), specular);
 
   return result;
 }
@@ -702,7 +689,7 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\scene_test.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\scene_test.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
@@ -710,15 +697,12 @@ int main(int argc, char *argv[]) {
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
-    //  "hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
-    //  "hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_"
-    //  "hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 
-    Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
+    //Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;
