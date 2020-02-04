@@ -46,7 +46,7 @@ bool intersection_sphere(const Sphere& s, const Ray& r, float& dist) {
   return false;
 }
 
-bool intersection_triangle(const Triangle& tri, const Ray& r, float& dist) {
+bool intersection_triangle_BROKEN(const Triangle& tri, const Ray& r, float& dist) {
   const vec3& v1 = tri.vertices[0];
   const vec3& v2 = tri.vertices[1];
   const vec3& v3 = tri.vertices[2];
@@ -84,6 +84,46 @@ bool intersection_triangle(const Triangle& tri, const Ray& r, float& dist) {
 
   dist = t;
   return true;
+}
+
+bool intersection_triangle(const Triangle& tri, const Ray& r, float& dist) {
+  const vec3& v1 = tri.vertices[0];
+  const vec3& v2 = tri.vertices[1];
+  const vec3& v3 = tri.vertices[2];
+
+  vec3 e1 = v2 - v1;
+  vec3 e2 = v3 - v1;
+  vec3 h = cross(r.dir, e2);
+  float a = dot(e1, h);
+
+  if (abs(a) < std::numeric_limits<float>::epsilon()) {
+    return false;
+  }
+
+  float f = 1/a;
+  vec3 s = r.orig - v1;
+  float u = f * (dot(s, h));
+
+  if (u < 0.0 || u > 1.0) {
+    return false;
+  }
+
+  vec3 q = cross(s, e1);
+  float v = f * dot(r.dir, q);
+
+  if (v < 0.0 || u + v > 1.0) {
+    return false;
+  }
+
+  float t = f * dot(e2, q);
+
+  if (t > std::numeric_limits<float>::epsilon()) {
+    dist = t / length(r.dir);
+    return true;
+  }
+  else {
+    return false;
+  }
 }
 
 bool intersection_triangle(const TriangleNormals& tri, const Ray& r,
