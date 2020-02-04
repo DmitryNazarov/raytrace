@@ -6,8 +6,6 @@
 #include <SFML/System.hpp>
 
 #include <threadpool.h>
-#include <transform.h>
-#include <primitives.h>
 #include <intersections.h>
 #include <settings_reader.h>
 

@@ -1,10 +1,12 @@
-#pragma once
+#ifndef TRANSFORM_H
+#define TRANSFORM_H
 
 #include <type_traits>
 #define _USE_MATH_DEFINES
 #include <iomanip>
 #include <math.h>
 #include <sstream>
+#include <vector>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -206,3 +208,6 @@ template <int N> mat<N> inverse(const mat<N> &m) {
 }
 
 }; // namespace Transform
+
+#endif TRANSFORM_H
+

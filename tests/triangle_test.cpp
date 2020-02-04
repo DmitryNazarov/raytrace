@@ -21,6 +21,8 @@ TEST(trianle_tests, intersection) {
   Ray r(vec3(.0f, .0f, .0f), normalize(vec3(-0.5f, -0.5f, -1.0f)));
   bool result = intersection_triangle(t, r, dist);
 
+  vec3 intersection_point = r.orig + r.dir * dist;
+
   ASSERT_TRUE(result);
-  ASSERT_FLOAT_EQ(0.65633893f, dist);
+  ASSERT_FLOAT_EQ(0.65633893f, length(intersection_point - r.orig));
 }

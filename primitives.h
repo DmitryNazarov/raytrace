@@ -1,4 +1,6 @@
-#pragma once
+#ifndef PRIMITIVES_H
+#define PRIMITIVES_H
+
 #include <transform.h>
 
 using namespace Transform;
@@ -53,3 +55,5 @@ struct Ray {
   vec3 orig;
   vec3 dir;
 };
+
+#endif PRIMITIVES_H
