@@ -43,7 +43,7 @@ vec4 Render::compute_light(const vec3& direction, const vec4& lightcolor, const 
 }
 
 Color Render::compute_shading(const vec3 &point, const vec3 &normal,
-                              size_t obj_index, const Material &m) {
+                              int obj_index, const Material &m) {
   vec4 finalcolor = {0.0f, 0.0f, 0.0f, 1.0f};
 
   vec3 direction, half;
@@ -54,8 +54,8 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
     compensate_float_rounding_error(shadow_ray, normal);
 
     vec3 hit_point;
-    size_t index = 0;
-    if (!cast_ray(shadow_ray, hit_point, index) && obj_index != index) {
+    int index = 0;
+    if (!cast_ray(shadow_ray, hit_point, index, obj_index)) {
       direction = normalize(i.dir);
       half = normalize(direction + eyedirn);
       finalcolor += compute_light(direction, i.color, normal, half, m.diffuse,
@@ -71,9 +71,9 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
 
     float dist = length(lightdir);
     vec3 hit_point;
-    size_t index = 0;
+    int index = 0;
     bool is_hidden_by_other_obj = false;
-    if (cast_ray(shadow_ray, hit_point, index) && obj_index != index) {
+    if (cast_ray(shadow_ray, hit_point, index, obj_index)) {
       is_hidden_by_other_obj = length(hit_point - point) < dist;
     }
 
@@ -93,45 +93,36 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
   return finalcolor;
 }
 
-bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, size_t &index) {
+bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, int &index, int ignore_obj_index) {
   bool is_intersection = false;
   float dist = std::numeric_limits<float>::max(),
         d = std::numeric_limits<float>::max();
 
   for (size_t i = 0; i < s.objects.size(); ++i) {
+    bool is_intersc = false;
     switch (s.objects[i].type) {
     case SPHERE: {
-      if (intersection_sphere(s.spheres[s.objects[i].index], ray, d)) {
-        if (d < dist) {
-          dist = d;
-          index = i;
-          is_intersection = true;
-        }
-      }
+      is_intersc = intersection_sphere(s.spheres[s.objects[i].index], ray, d);
       break;
     }
     case TRIANGLE: {
-      if (intersection_triangle(s.triangles[s.objects[i].index], ray, d)) {
-        if (d < dist) {
-          dist = d;
-          index = i;
-          is_intersection = true;
-        }
-      }
+      is_intersc = intersection_triangle(s.triangles[s.objects[i].index], ray, d);
       break;
     }
     case TRIANGLE_NORMALS: {
-      if (intersection_triangle(s.triangle_normals[s.objects[i].index], ray, d)) {
-        if (d < dist) {
-          dist = d;
-          index = i;
-          is_intersection = true;
-        }
-      }
+      is_intersc = intersection_triangle(s.triangle_normals[s.objects[i].index], ray, d);
       break;
     }
     default:
       std::cout << "Unknown object type!" << std::endl;
+    }
+
+    if (is_intersc) {
+      if (d < dist && (i != ignore_obj_index || ignore_obj_index == -1)) {
+        dist = d;
+        index = static_cast<int>(i);
+        is_intersection = true;
+      }
     }
   }
 
@@ -182,7 +173,7 @@ Color Render::trace(const Ray &ray, int curr_depth) {
   vec3 normal;
   vec4 specular;
 
-  size_t i = 0;
+  int i = 0;
   if (!cast_ray(ray, intersection_point, i))
     return result;
 
@@ -320,7 +311,7 @@ int main(int argc, char *argv[]) {
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
@@ -329,7 +320,7 @@ int main(int argc, char *argv[]) {
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 
-    Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
+    //Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;
