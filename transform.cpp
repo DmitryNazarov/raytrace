@@ -55,4 +55,13 @@ template <> float determinant(const mat<2> &m) {
   return m[0][0] * m[1][1] - m[1][0] * m[0][1];
 }
 
+std::string debug_vector(const vec3 &v1, const vec3 &v2) {
+  std::ostringstream ss;
+  ss << "vector left: " << std::setw(4) << "\n";
+  ss << v1.x << " " << v1.y << " " << v1.z << "\n";
+  ss << "vector right: " << std::setw(4) << "\n";
+  ss << v2.x << " " << v2.y << " " << v2.z << "\n";
+  return ss.str();
+}
+
 }; // namespace Transform

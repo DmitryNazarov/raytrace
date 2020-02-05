@@ -44,6 +44,7 @@ ENDIF()
 add_subdirectory(googletest)
 
 set(TEST_SOURCES
+  tests/test_common.cpp
   tests/transform_test.cpp
   tests/triangle_test.cpp
   tests/sphere_test.cpp
@@ -52,5 +53,5 @@ set(TEST_SOURCES
 )
 
 add_executable(${PROJECT_NAME}_test ${TEST_SOURCES})
-target_include_directories(${PROJECT_NAME}_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/include ${GLM_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME}_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/tests ${CMAKE_CURRENT_SOURCE_DIR}/googletest/googletest/include ${GLM_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME}_test gtest gtest_main)

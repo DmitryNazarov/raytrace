@@ -11,4 +11,4 @@ bool intersection_triangle_BROKEN(const Triangle& tri, const Ray& r, float& dist
 bool intersection_triangle(const Triangle& tri, const Ray& r, float& dist);
 bool intersection_triangle(const TriangleNormals& tri, const Ray& r, float& dist);
 
-#endif INTERSECTION_H
+#endif // INTERSECTION_H

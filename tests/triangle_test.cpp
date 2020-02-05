@@ -1,7 +1,5 @@
-#include <gtest/gtest.h>
+#include <test_common.h>
 #include <intersections.h>
-
-using namespace Transform;
 
 
 TEST(trianle_tests, intersection) {

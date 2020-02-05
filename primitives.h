@@ -56,4 +56,4 @@ struct Ray {
   vec3 dir;
 };
 
-#endif PRIMITIVES_H
+#endif // PRIMITIVES_H

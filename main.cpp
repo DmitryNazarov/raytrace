@@ -191,18 +191,7 @@ Color Render::trace(const Ray &ray, int curr_depth) {
   case SPHERE: {
     Sphere &hit_sphere = s.spheres[hit_obj.index];
     specular = hit_sphere.material.specular;
-
-    //vec3 p = hit_sphere.transform * vec4(intersection_point, 1.0f);
-    /*normal = normalize(mat3(transpose(hit_sphere.inverted_transform)) *
-      (vec3(p) - hit_sphere.pos));*/
-
-    vec3 p = hit_sphere.inverted_transform * vec4(intersection_point, 1.0f);
-    //normal = normalize(hit_sphere.transform * vec4(normalize(vec3(p) - hit_sphere.pos), 0.f));
-
-    //normal = normalize(mat3(hit_sphere.inverted_transform) * (p - hit_sphere.pos));
-    //normal = normalize(mat3(hit_sphere.transform) * (p - hit_sphere.pos));
-    normal = normalize((p - hit_sphere.pos));
-
+    normal = normalize(intersection_point - vec3(hit_sphere.transform * vec4(hit_sphere.pos, 1.0f)));
     result = compute_shading(intersection_point, normal, i, hit_sphere.material);
     break;
   }
@@ -331,7 +320,7 @@ int main(int argc, char *argv[]) {
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
@@ -340,7 +329,7 @@ int main(int argc, char *argv[]) {
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 
-    //Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
+    Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;

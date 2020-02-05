@@ -23,4 +23,4 @@ private:
   bool stopped = false;
 };
 
-#endif THREADPOOL_H
+#endif // THREADPOOL_H
