@@ -164,7 +164,7 @@ Color mix_color(const Color &self_color, const Color &refl_color,
 }
 
 Color Render::trace(const Ray &ray, int curr_depth) {
-  Color result{0.0f, 0.0f, 0.0f, 0.0f};
+  Color result{0.0f, 0.0f, 0.0f, 1.0f};
 
   if (++curr_depth == s.depth)
     return result;
