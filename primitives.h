@@ -18,7 +18,7 @@ struct Sphere {
   float radius;
   vec3 pos;
   Material material;
-  mat4 transform, inverted_transform;
+  mat4 transform{1.0f}, inverted_transform{ 1.0f };
 };
 
 struct Triangle {
