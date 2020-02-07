@@ -20,7 +20,7 @@ private:
   Color trace(const Ray &ray, int curr_depth = 0);
   void screeshot();
   void raytracer_process(size_t start, size_t end);
-  void render_handling();
+  void render_handling(const sf::Event &event);
   bool cast_ray(const Ray &ray, vec3 &intersection_point, int &index, int ignore_obj_index = -1);
   Color compute_shading(const vec3 &point, const vec3 &normal,
     int obj_index, const Material &m);
@@ -43,6 +43,8 @@ private:
   size_t progress = 0;
 
   size_t last_progress = 0;
+
+  bool show_debug = false;
 
   std::vector<uint8_t> draw_buffer;
   std::vector<uint8_t> buffer;

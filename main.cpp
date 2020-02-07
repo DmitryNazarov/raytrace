@@ -224,7 +224,8 @@ void Render::start_raytrace() {
 }
 
 void Render::raytracer_process(size_t start, size_t end) {
-  for (size_t i = start; i < end; ++i) {
+  //for (size_t i = start; i < end; ++i) {
+    size_t i = 56 + 85 * s.width;
     size_t x = i % s.width;
     size_t y = i / s.width;
 
@@ -245,7 +246,7 @@ void Render::raytracer_process(size_t start, size_t end) {
       std::scoped_lock<std::mutex> lock(guard);
       ++progress;
     }
-  }
+  //}
 }
 
 void Render::update() {
@@ -257,15 +258,18 @@ void Render::update() {
       } else if (event.type == sf::Event::KeyPressed &&
                  event.key.code == sf::Keyboard::F1) {
         screeshot();
+      } else if (event.type == sf::Event::KeyPressed &&
+                 event.key.code == sf::Keyboard::F2) {
+        show_debug = !show_debug;
       }
     }
     window.clear();
-    render_handling();
+    render_handling(event);
     window.display();
   }
 }
 
-void Render::render_handling() {
+void Render::render_handling(const sf::Event &event) {
   sf::Sprite sprite(texture);
 
   if (last_progress != pix_count) {
@@ -287,6 +291,10 @@ void Render::render_handling() {
     }
 
     last_progress = curr_progress;
+  }
+
+  if (show_debug) {
+    text.setString(std::to_string(event.mouseMove.x) + " " + std::to_string(event.mouseMove.y));
   }
 
   texture.update(buffer.data());
@@ -311,7 +319,7 @@ int main(int argc, char *argv[]) {
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
@@ -320,7 +328,7 @@ int main(int argc, char *argv[]) {
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 
-    //Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
+    Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;
