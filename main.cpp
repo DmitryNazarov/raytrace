@@ -209,7 +209,7 @@ Color Render::trace(const Ray &ray, int curr_depth) {
   Ray secondary_ray(intersection_point, reflect(ray.dir, normal));
   compensate_float_rounding_error(secondary_ray, normal);
   //result += specular * trace(secondary_ray, curr_depth);
-  //result = mix_color(result, trace(secondary_ray, curr_depth), specular);
+  result = mix_color(result, trace(secondary_ray, curr_depth), specular);
 
   return result;
 }
