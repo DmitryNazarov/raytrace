@@ -50,7 +50,8 @@ private:
   std::vector<uint8_t> buffer;
 
   std::thread task_provider;
-  ThreadPool pool;
+  //ThreadPool pool;
+  ThreadPool pool{1};
 
   std::chrono::time_point<std::chrono::system_clock> start_time;
 };

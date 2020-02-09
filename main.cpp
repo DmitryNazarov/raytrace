@@ -50,7 +50,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
   vec3 eyedirn = normalize(s.eye_init - point);
 
   for (auto &i : s.direct_lights) {
-    Ray shadow_ray(point, normalize(-i.dir));
+    Ray shadow_ray(point, normalize(i.dir));
     compensate_float_rounding_error(shadow_ray, normal);
 
     vec3 hit_point;
@@ -74,6 +74,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
     int index = 0;
     bool is_hidden_by_other_obj = false;
     if (cast_ray(shadow_ray, hit_point, index, obj_index)) {
+      auto l = length(hit_point - point);
       is_hidden_by_other_obj = length(hit_point - point) < dist;
     }
 
@@ -88,7 +89,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
   }
 
   finalcolor += m.ambient + m.emission;
-  if (finalcolor.a > 255)
+  if (finalcolor.a > 1.0f)
     return vec4(vec3(finalcolor), 1.0f);
   return finalcolor;
 }
@@ -208,7 +209,7 @@ Color Render::trace(const Ray &ray, int curr_depth) {
   Ray secondary_ray(intersection_point, reflect(ray.dir, normal));
   compensate_float_rounding_error(secondary_ray, normal);
   //result += specular * trace(secondary_ray, curr_depth);
-  result = mix_color(result, trace(secondary_ray, curr_depth), specular);
+  //result = mix_color(result, trace(secondary_ray, curr_depth), specular);
 
   return result;
 }
@@ -224,8 +225,8 @@ void Render::start_raytrace() {
 }
 
 void Render::raytracer_process(size_t start, size_t end) {
-  //for (size_t i = start; i < end; ++i) {
-    size_t i = 56 + 85 * s.width;
+  for (size_t i = start; i < end; ++i) {
+    //size_t i = 385 + 212 * s.width;
     size_t x = i % s.width;
     size_t y = i / s.width;
 
@@ -246,7 +247,7 @@ void Render::raytracer_process(size_t start, size_t end) {
       std::scoped_lock<std::mutex> lock(guard);
       ++progress;
     }
-  //}
+  }
 }
 
 void Render::update() {
@@ -315,7 +316,7 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\scene_test.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\test_directional.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
@@ -328,7 +329,7 @@ int main(int argc, char *argv[]) {
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 
-    Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
+    //Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;
