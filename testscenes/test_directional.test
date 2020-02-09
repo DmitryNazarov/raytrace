@@ -1,6 +1,6 @@
 #Cornell Box
 size 640 480
-camera 0 0 3 0 0 -1 0 1 0 45
+camera 0 0 3 0 0 -0 0 1 0 45
 output scene6.png
 
 maxdepth 5
@@ -54,20 +54,20 @@ tri 0 1 2
 tri 0 2 3
 popTransform
 
-#sphere2
-diffuse 0.7 0.5 0.2
-specular 0.2 0.2 0.2
-pushTransform
-translate 0 -0.5 -1.6
-scale 0.1 0.1 0.1
-sphere 0 0 0 1
-popTransform
+##sphere2
+#diffuse 0.7 0.5 0.2
+#specular 0.2 0.2 0.2
+#pushTransform
+#translate 0 -0.5 -1.6
+#scale 0.1 0.1 0.1
+#sphere 0 0 0 1
+#popTransform
 
 #sphere4
 diffuse 0.7 0.5 0.2
 specular 0.2 0.2 0.2
 pushTransform
-translate 0 -0.5 -2
+translate 0 -0.5 -2.0
 scale 0.3 0.6 0.3
 sphere 0 0 0 1
 popTransform

@@ -56,7 +56,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
     vec3 hit_point;
     int index = 0;
     if (!cast_ray(shadow_ray, hit_point, index, obj_index)) {
-      direction = normalize(i.dir);
+      direction = normalize(-i.dir);
       half = normalize(direction + eyedirn);
       finalcolor += compute_light(direction, i.color, normal, half, m.diffuse,
                                   m.specular, m.shininess);
@@ -316,11 +316,11 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\test_directional.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\test_directional.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
