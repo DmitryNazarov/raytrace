@@ -50,7 +50,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
   vec3 eyedirn = normalize(s.eye_init - point);
 
   for (auto &i : s.direct_lights) {
-    Ray shadow_ray(point, normalize(-i.dir));
+    Ray shadow_ray(point, normalize(i.dir));
     compensate_float_rounding_error(shadow_ray, normal);
 
     vec3 hit_point;
@@ -88,7 +88,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
   }
 
   finalcolor += m.ambient + m.emission;
-  if (finalcolor.a > 255)
+  if (finalcolor.a > 1.0f)
     return vec4(vec3(finalcolor), 1.0f);
   return finalcolor;
 }

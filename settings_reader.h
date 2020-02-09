@@ -135,22 +135,19 @@ Settings read_settings(const std::string& filename) {
       float values[3];
       if (readvals(ss, 3, values)) {
         transfstack.top() = translate(transfstack.top(), vec3(values[0], values[1], values[2]));
-        //transfstack.top() = transfstack.top() * glm::translate(mat4(1.0f), vec3(values[0], values[1], values[2]));
       }
     }
     else if (cmd == "scale") {
       float values[3];
       if (readvals(ss, 3, values)) {
         transfstack.top() = scale(transfstack.top(), vec3(values[0], values[1], values[2]));
-        //transfstack.top() = transfstack.top() * glm::scale(mat4(1.0f), vec3(values[0], values[1], values[2]));
       }
     }
     else if (cmd == "rotate") {
       float values[4];
       if (readvals(ss, 4, values)) {
         vec3 axis = normalize(vec3(values[0], values[1], values[2]));
-        transfstack.top() = rotate(transfstack.top(), values[3], axis);
-        //transfstack.top() = transfstack.top() * glm::rotate(mat4(1.0f), values[3], axis);
+        transfstack.top() = rotate(transfstack.top(), radians(values[3]), axis);
       }
     }
     else if (cmd == "pushTransform") {

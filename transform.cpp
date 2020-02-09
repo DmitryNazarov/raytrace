@@ -1,10 +1,9 @@
 #include "transform.h"
 
 namespace Transform {
-mat4 rotate(const mat4 &m, const float degrees, const vec3 &axis) {
-  float rad = radians(degrees);
-  float cos_a = cos(rad);
-  float sin_a = sin(rad);
+mat4 rotate(const mat4 &m, const float radians, const vec3 &axis) {
+  float cos_a = cos(radians);
+  float sin_a = sin(radians);
 
   const float &x = axis[0];
   const float &y = axis[1];
