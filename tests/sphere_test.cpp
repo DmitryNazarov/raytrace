@@ -19,12 +19,19 @@ TEST(sphere_tests, intersection) {
   ASSERT_TRUE(result);
 
   vec3 intersection_point = r.orig + r.dir * dist;
-  ASSERT_FLOAT_EQ(1.4140722f, length(intersection_point - r.orig));
 
-  compare_vectors(intersection_point, vec3(0.9999f, 0.0f, -0.9999f));
+  vec3 orig = s.inverted_transform * vec4(r.orig, 1.0f);
+  vec3 dir = normalize(s.inverted_transform * vec4(r.dir, 0.0f));
+  vec3 ip = orig + dir * dist;
+  vec3 trans_p = s.transform * vec4(ip, 1.0f);
 
-  vec3 normal = normalize(intersection_point - vec3(s.transform * vec4(s.pos, 1.0f)));
-  compare_vectors(normal, vec3(1.0f, 0.0f, 0.0001000266f));
+  ASSERT_FLOAT_EQ(1.4140722f, length(trans_p - r.orig));
+
+  compare_vectors(trans_p, vec3(0.9999f, 0.0f, -0.9999f));
+
+  vec3 normal = normalize(mat3(transpose(s.inverted_transform)) * vec3(intersection_point - s.pos));
+  //vec3 normal = normalize(intersection_point - vec3(s.transform * vec4(s.pos, 1.0f)));
+  compare_vectors(normal, vec3(1.0f, 0.0f, 0.0f));
 }
 
 TEST(sphere_tests, intersection2) {
@@ -42,18 +49,28 @@ TEST(sphere_tests, intersection2) {
   Ray r(vec3(.0f, -4.0f, 4.0f), normalize(vec3(-0.0788498148f, 0.724480212f, -0.684770823f)));
   bool result = intersection_sphere(s, r, dist);
   ASSERT_TRUE(result);
+  // std::cerr << "dist: " << dist << "\n";
 
-  vec3 intersection_point = r.orig + r.dir * dist;
-  //ASSERT_FLOAT_EQ(4.8458166f, length(intersection_point - r.orig));
+  // float dist2 = 0.0f;
+  // vec3 orig000 = s.inverted_transform * vec4(r.orig, 1.0f);
+  // vec3 dir000 = normalize(s.inverted_transform * vec4(r.dir, 0.0f));
+  // vec3 ip = orig000 + dir000 * dist;
+  // vec3 trans_p = s.transform * vec4(ip, 1.0f);
+  // dist2 = length(trans_p - r.orig);
+  // std::cerr << "dist2: " << dist2 << "\n";
 
-  //compare_vectors(intersection_point, vec3(-0.38209173f, -0.489302f, 0.681726f));
-
-  vec3 normal = normalize(intersection_point - vec3(s.transform * vec4(s.pos, 1.0f)));
-  //compare_vectors(normal, vec3(-0.590682f, -0.75642f, 0.280934f));
-
-
+  vec3 orig = s.inverted_transform * vec4(r.orig, 1.0f);
+  vec3 dir = normalize(s.inverted_transform * vec4(r.dir, 0.0f));
+  vec3 intersection_point = orig + dir * dist;
+  vec3 normal = normalize(mat3(transpose(s.inverted_transform)) * vec3(intersection_point - s.pos));
   vec3 direction = normalize(vec3(1.f, 1.f, 3.f) - intersection_point);
 
   float n_dot_l = dot(normal, direction);
+  ASSERT_GT(n_dot_l, 0.0f);
   vec4 lambert = vec4(1.0f, 0.f, 0.f, 1.0f) * std::max(n_dot_l, 0.0f);
+
+  std::ostringstream ss;
+  ss << "vector: " << std::setw(4) << "\n";
+  ss << lambert.r << " " << lambert.g << " " << lambert.b << " " << lambert.a << "\n";
+  std::cerr << ss.str();
 }
