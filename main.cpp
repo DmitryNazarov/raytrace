@@ -55,7 +55,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
 
     vec3 hit_point;
     int index = 0;
-    if (!cast_ray(shadow_ray, hit_point, index, obj_index)) {
+    if (!cast_ray(shadow_ray, hit_point, index, obj_index) && obj_index != index) {
       direction = normalize(-i.dir);
       half = normalize(direction + eyedirn);
       finalcolor += compute_light(direction, i.color, normal, half, m.diffuse,
@@ -73,7 +73,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
     vec3 hit_point;
     int index = 0;
     bool is_hidden_by_other_obj = false;
-    if (cast_ray(shadow_ray, hit_point, index, obj_index)) {
+    if (cast_ray(shadow_ray, hit_point, index, obj_index) && obj_index != index) {
       auto l = length(hit_point - point);
       is_hidden_by_other_obj = length(hit_point - point) < dist;
     }
@@ -119,7 +119,7 @@ bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, int &index, int 
     }
 
     if (is_intersc) {
-      if (d < dist && (i != ignore_obj_index || ignore_obj_index == -1)) {
+      if (d < dist/* && (i != ignore_obj_index || ignore_obj_index == -1)*/) {
         dist = d;
         index = static_cast<int>(i);
         is_intersection = true;
@@ -225,8 +225,9 @@ void Render::start_raytrace() {
 }
 
 void Render::raytracer_process(size_t start, size_t end) {
-  for (size_t i = start; i < end; ++i) {
-    //size_t i = 385 + 212 * s.width;
+  //for (size_t i = start; i < end; ++i) {
+    size_t i = 273 + 140 * s.width;
+    //size_t i = 307 + 105 * s.width;
     size_t x = i % s.width;
     size_t y = i / s.width;
 
@@ -247,7 +248,7 @@ void Render::raytracer_process(size_t start, size_t end) {
       std::scoped_lock<std::mutex> lock(guard);
       ++progress;
     }
-  }
+  //}
 }
 
 void Render::update() {
@@ -320,12 +321,12 @@ int main(int argc, char *argv[]) {
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 

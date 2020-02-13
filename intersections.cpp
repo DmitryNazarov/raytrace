@@ -29,6 +29,7 @@ bool intersection_sphere(const Sphere& s, const Ray& r, float& dist) {
     vec3 intersection_point = orig + t * dir;
     vec3 trans_point = s.transform * vec4(intersection_point, 1.0f);
     dist = length(trans_point - r.orig);
+    dist = t;
 
     return true;
   }
