@@ -103,7 +103,14 @@ bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, int &index, int 
     bool is_intersc = false;
     switch (s.objects[i].type) {
     case SPHERE: {
-      is_intersc = intersection_sphere(s.spheres[s.objects[i].index], ray, d);
+      Sphere& sph = s.spheres[s.objects[i].index];
+      vec3 orig = sph.inverted_transform * vec4(ray.orig, 1.0f);
+      vec3 dir = normalize(sph.inverted_transform * vec4(ray.dir, 0.0f));
+      float distance;
+      is_intersc = intersection_sphere(sph, ray, distance);
+      vec3 ip = orig + distance * dir;
+      vec3 intersection_point = sph.transform * vec4(ip, 1.0f);
+      d = length(intersection_point - ray.orig);
       break;
     }
     case TRIANGLE: {
@@ -181,9 +188,11 @@ Color Render::trace(const Ray &ray, int curr_depth) {
   Object &hit_obj = s.objects[i];
   switch (hit_obj.type) {
   case SPHERE: {
-    Sphere &hit_sphere = s.spheres[hit_obj.index];
+    Sphere& hit_sphere = s.spheres[hit_obj.index];
     specular = hit_sphere.material.specular;
-    normal = normalize(intersection_point - vec3(hit_sphere.transform * vec4(hit_sphere.pos, 1.0f)));
+    vec3 ip = hit_sphere.inverted_transform * vec4(intersection_point, 1.0f);
+    normal = normalize(mat3(transpose(hit_sphere.inverted_transform)) * vec3(ip - hit_sphere.pos));
+    intersection_point = hit_sphere.transform * vec4(ip, 1.0f);
     result = compute_shading(intersection_point, normal, i, hit_sphere.material);
     break;
   }
@@ -225,8 +234,8 @@ void Render::start_raytrace() {
 }
 
 void Render::raytracer_process(size_t start, size_t end) {
-  //for (size_t i = start; i < end; ++i) {
-    size_t i = 273 + 140 * s.width;
+  for (size_t i = start; i < end; ++i) {
+    //size_t i = 273 + 140 * s.width;
     //size_t i = 307 + 105 * s.width;
     size_t x = i % s.width;
     size_t y = i / s.width;
@@ -248,7 +257,7 @@ void Render::raytracer_process(size_t start, size_t end) {
       std::scoped_lock<std::mutex> lock(guard);
       ++progress;
     }
-  //}
+  }
 }
 
 void Render::update() {
@@ -323,10 +332,10 @@ int main(int argc, char *argv[]) {
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
 
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 
