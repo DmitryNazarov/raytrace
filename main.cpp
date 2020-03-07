@@ -42,12 +42,13 @@ vec4 Render::compute_light(const vec3& direction, const vec4& lightcolor, const 
   return lightcolor * (lambert + phong);
 }
 
-Color Render::compute_shading(const vec3 &point, const vec3 &normal,
+Color Render::compute_shading(const vec3 &point, const vec3& eye, const vec3 &normal,
                               int obj_index, const Material &m) {
   vec4 finalcolor = {0.0f, 0.0f, 0.0f, 1.0f};
 
   vec3 direction, half;
   vec3 eyedirn = normalize(s.eye_init - point);
+  //vec3 eyedirn = normalize(eye - point);
 
   for (auto &i : s.direct_lights) {
     Ray shadow_ray(point, normalize(i.dir));
@@ -55,8 +56,8 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
 
     vec3 hit_point;
     int index = 0;
-    if (!cast_ray(shadow_ray, hit_point, index, obj_index) && obj_index != index) {
-      direction = normalize(-i.dir);
+    if (!cast_ray(shadow_ray, hit_point, index, obj_index)/* && obj_index != index*/) {
+      direction = normalize(i.dir);
       half = normalize(direction + eyedirn);
       finalcolor += compute_light(direction, i.color, normal, half, m.diffuse,
                                   m.specular, m.shininess);
@@ -126,7 +127,7 @@ bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, int &index, int 
     }
 
     if (is_intersc) {
-      if (d < dist/* && (i != ignore_obj_index || ignore_obj_index == -1)*/) {
+      if (d < dist) {
         dist = d;
         index = static_cast<int>(i);
         is_intersection = true;
@@ -171,10 +172,10 @@ Color mix_color(const Color &self_color, const Color &refl_color,
   return Color(r, g, b, self_color.a);
 }
 
-Color Render::trace(const Ray &ray, int curr_depth) {
+Color Render::trace(const Ray &ray, int curr_depth, int ignore_obj_index) {
   Color result{0.0f, 0.0f, 0.0f, 1.0f};
 
-  if (++curr_depth == s.depth)
+  if (curr_depth == s.depth)
     return result;
 
   vec3 intersection_point;
@@ -182,32 +183,35 @@ Color Render::trace(const Ray &ray, int curr_depth) {
   vec4 specular;
 
   int i = 0;
-  if (!cast_ray(ray, intersection_point, i))
+  if (!cast_ray(ray, intersection_point, i, ignore_obj_index))
     return result;
 
   Object &hit_obj = s.objects[i];
   switch (hit_obj.type) {
   case SPHERE: {
+    //std::cerr << "SPHERE " << hit_obj.index << " depth: " << curr_depth << std::endl;
     Sphere& hit_sphere = s.spheres[hit_obj.index];
     specular = hit_sphere.material.specular;
     vec3 ip = hit_sphere.inverted_transform * vec4(intersection_point, 1.0f);
     normal = normalize(mat3(transpose(hit_sphere.inverted_transform)) * vec3(ip - hit_sphere.pos));
     intersection_point = hit_sphere.transform * vec4(ip, 1.0f);
-    result = compute_shading(intersection_point, normal, i, hit_sphere.material);
+    result = compute_shading(intersection_point, ray.orig, normal, i, hit_sphere.material);
     break;
   }
   case TRIANGLE: {
+    //std::cerr << "TRIANGLE " << hit_obj.index << " depth: " << curr_depth << std::endl;
     Triangle &hit_triangle = s.triangles[hit_obj.index];
     specular = hit_triangle.material.specular;
     normal = hit_triangle.normal;
-    result = compute_shading(intersection_point, normal, i, hit_triangle.material);
+    result = compute_shading(intersection_point, ray.orig, normal, i, hit_triangle.material);
     break;
   }
   case TRIANGLE_NORMALS: {
+    //std::cerr << "TRIANGLE_NORMALS" << " depth: " << curr_depth << std::endl;
     TriangleNormals &hit_triangle = s.triangle_normals[hit_obj.index];
     specular = hit_triangle.material.specular;
     normal = interpolate_normal(hit_triangle, intersection_point);
-    result = compute_shading(intersection_point, normal, i, hit_triangle.material);
+    result = compute_shading(intersection_point, ray.orig, normal, i, hit_triangle.material);
     break;
   }
   default:
@@ -217,8 +221,18 @@ Color Render::trace(const Ray &ray, int curr_depth) {
 
   Ray secondary_ray(intersection_point, reflect(ray.dir, normal));
   compensate_float_rounding_error(secondary_ray, normal);
-  //result += specular * trace(secondary_ray, curr_depth);
-  result = mix_color(result, trace(secondary_ray, curr_depth), specular);
+  //std::ostringstream ss;
+  //ss << "intersection_point: " << std::setw(4) << "\n";
+  //ss << intersection_point.x << " " << intersection_point.y << " " << intersection_point.z << "\n";
+  //ss << "normal: " << std::setw(4) << "\n";
+  //ss << normal.x << " " << normal.y << " " << normal.z << "\n";
+  //ss << "ray.dir: " << std::setw(4) << "\n";
+  //ss << ray.dir.x << " " << ray.dir.y << " " << ray.dir.z << "\n";
+  //ss << "result: " << std::setw(4) << "\n";
+  //ss << result.r << " " << result.g << " " << result.b << "\n";
+  //std::cout << ss.str() << std::endl;
+  result += specular * trace(secondary_ray, ++curr_depth);
+  //result = mix_color(result, trace(secondary_ray, ++curr_depth), specular);
 
   return result;
 }
@@ -230,13 +244,13 @@ void Render::start_raytrace() {
     for (size_t i = 0; i < pix_count; i += step) {
       pool.add_work([this, i, step]() { raytracer_process(i, i + step); });
     }
+    //pool.add_work([this]() { raytracer_process(0, 0); });
   });
 }
 
 void Render::raytracer_process(size_t start, size_t end) {
   for (size_t i = start; i < end; ++i) {
-    //size_t i = 273 + 140 * s.width;
-    //size_t i = 307 + 105 * s.width;
+    //size_t i = 850 + 850* s.width;
     size_t x = i % s.width;
     size_t y = i / s.width;
 
@@ -247,6 +261,11 @@ void Render::raytracer_process(size_t start, size_t end) {
     vec3 dir = normalize(a * s.u + b * s.v - s.w);
 
     Color c = trace(Ray(s.eye_init, dir));
+
+    /*std::ostringstream ss;
+    ss << "final result: " << std::setw(4) << "\n";
+    ss << c.r << " " << c.g << " " << c.b << "\n";
+    std::cout << ss.str() << std::endl;*/
 
     draw_buffer[4 * i] = static_cast<int>(std::min(c.r, 1.0f) * 255);
     draw_buffer[4 * i + 1] = static_cast<int>(std::min(c.g, 1.0f) * 255);
@@ -326,13 +345,12 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\test_directional.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
 
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
