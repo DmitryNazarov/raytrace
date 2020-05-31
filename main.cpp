@@ -47,8 +47,7 @@ Color Render::compute_shading(const vec3 &point, const vec3& eye, const vec3 &no
   vec4 finalcolor = {0.0f, 0.0f, 0.0f, 1.0f};
 
   vec3 direction, half;
-  vec3 eyedirn = normalize(s.eye_init - point);
-  //vec3 eyedirn = normalize(eye - point);
+  vec3 eyedirn = normalize(eye - point);
 
   for (auto &i : s.direct_lights) {
     Ray shadow_ray(point, normalize(i.dir));
@@ -127,7 +126,7 @@ bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, int &index, int 
     }
 
     if (is_intersc) {
-      if (d < dist) {
+      if (d < dist/* && (i != ignore_obj_index || ignore_obj_index == -1)*/) {
         dist = d;
         index = static_cast<int>(i);
         is_intersection = true;
@@ -346,16 +345,19 @@ int main(int argc, char *argv[]) {
   try {
     // Render r(read_settings(argv[1]));
 
+    //Дракон
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
+    //сцена
+    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
 
+    //шары
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
+    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 
     //Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
     r.update();
