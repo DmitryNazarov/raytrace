@@ -1,7 +1,7 @@
 #include "transform.h"
 
 namespace Transform {
-mat4 rotate(const mat4 &m, const float radians, const vec3 &axis) {
+mat4 rotate(const mat4 &m, float radians, const vec3 &axis) {
   float cos_a = cos(radians);
   float sin_a = sin(radians);
 
@@ -47,7 +47,7 @@ vec3 cross(const vec3 &a, const vec3 &b) {
 }
 
 vec3 reflect(const vec3 &incident, const vec3 &normal) {
-  return incident - normal * dot(normal, incident) * 2.0f;
+  return incident - 2.0f * normal * dot(normal, incident);
 }
 
 template <> float determinant(const mat<2> &m) {

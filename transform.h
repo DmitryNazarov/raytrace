@@ -132,7 +132,7 @@ template <int N>
 
 [[nodiscard]] std::string debug_vector(const vec3 &v1, const vec3 &v2);
 
-mat4 rotate(const mat4 &m, const float degrees, const vec3 &axis);
+mat4 rotate(const mat4 &m, float degrees, const vec3 &axis);
 mat4 scale(const mat4 &m, const vec3 &v);
 mat4 translate(const mat4 &m, const vec3 &v);
 vec3 normalize(const vec3 &v);

@@ -42,12 +42,12 @@ vec4 Render::compute_light(const vec3& direction, const vec4& lightcolor, const 
   return lightcolor * (lambert + phong);
 }
 
-Color Render::compute_shading(const vec3 &point, const vec3 &normal,
+Color Render::compute_shading(const vec3 &point, const vec3& eye, const vec3 &normal,
                               int obj_index, const Material &m) {
   vec4 finalcolor = {0.0f, 0.0f, 0.0f, 1.0f};
 
   vec3 direction, half;
-  vec3 eyedirn = normalize(s.eye_init - point);
+  vec3 eyedirn = normalize(eye - point);
 
   for (auto &i : s.direct_lights) {
     Ray shadow_ray(point, normalize(i.dir));
@@ -55,7 +55,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
 
     vec3 hit_point;
     int index = 0;
-    if (!cast_ray(shadow_ray, hit_point, index, obj_index)) {
+    if (!cast_ray(shadow_ray, hit_point, index)) {
       direction = normalize(i.dir);
       half = normalize(direction + eyedirn);
       finalcolor += compute_light(direction, i.color, normal, half, m.diffuse,
@@ -73,7 +73,8 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
     vec3 hit_point;
     int index = 0;
     bool is_hidden_by_other_obj = false;
-    if (cast_ray(shadow_ray, hit_point, index, obj_index)) {
+    if (cast_ray(shadow_ray, hit_point, index) && obj_index != index) {
+      auto l = length(hit_point - point);
       is_hidden_by_other_obj = length(hit_point - point) < dist;
     }
 
@@ -93,7 +94,7 @@ Color Render::compute_shading(const vec3 &point, const vec3 &normal,
   return finalcolor;
 }
 
-bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, int &index, int ignore_obj_index) {
+bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, int &index) {
   bool is_intersection = false;
   float dist = std::numeric_limits<float>::max(),
         d = std::numeric_limits<float>::max();
@@ -102,7 +103,14 @@ bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, int &index, int 
     bool is_intersc = false;
     switch (s.objects[i].type) {
     case SPHERE: {
-      is_intersc = intersection_sphere(s.spheres[s.objects[i].index], ray, d);
+      Sphere& sph = s.spheres[s.objects[i].index];
+      vec3 orig = sph.inverted_transform * vec4(ray.orig, 1.0f);
+      vec3 dir = normalize(sph.inverted_transform * vec4(ray.dir, 0.0f));
+      float distance;
+      is_intersc = intersection_sphere(sph, ray, distance);
+      vec3 ip = orig + distance * dir;
+      vec3 intersection_point = sph.transform * vec4(ip, 1.0f);
+      d = length(intersection_point - ray.orig);
       break;
     }
     case TRIANGLE: {
@@ -118,7 +126,7 @@ bool Render::cast_ray(const Ray &ray, vec3 &intersection_point, int &index, int 
     }
 
     if (is_intersc) {
-      if (d < dist && (i != ignore_obj_index || ignore_obj_index == -1)) {
+      if (d < dist) {
         dist = d;
         index = static_cast<int>(i);
         is_intersection = true;
@@ -166,7 +174,7 @@ Color mix_color(const Color &self_color, const Color &refl_color,
 Color Render::trace(const Ray &ray, int curr_depth) {
   Color result{0.0f, 0.0f, 0.0f, 1.0f};
 
-  if (++curr_depth == s.depth)
+  if (curr_depth == s.depth)
     return result;
 
   vec3 intersection_point;
@@ -180,24 +188,26 @@ Color Render::trace(const Ray &ray, int curr_depth) {
   Object &hit_obj = s.objects[i];
   switch (hit_obj.type) {
   case SPHERE: {
-    Sphere &hit_sphere = s.spheres[hit_obj.index];
+    Sphere& hit_sphere = s.spheres[hit_obj.index];
     specular = hit_sphere.material.specular;
-    normal = normalize(intersection_point - vec3(hit_sphere.transform * vec4(hit_sphere.pos, 1.0f)));
-    result = compute_shading(intersection_point, normal, i, hit_sphere.material);
+    vec3 ip = hit_sphere.inverted_transform * vec4(intersection_point, 1.0f);
+    normal = normalize(mat3(transpose(hit_sphere.inverted_transform)) * vec3(ip - hit_sphere.pos));
+    intersection_point = hit_sphere.transform * vec4(ip, 1.0f);
+    result = compute_shading(intersection_point, ray.orig, normal, i, hit_sphere.material);
     break;
   }
   case TRIANGLE: {
     Triangle &hit_triangle = s.triangles[hit_obj.index];
     specular = hit_triangle.material.specular;
     normal = hit_triangle.normal;
-    result = compute_shading(intersection_point, normal, i, hit_triangle.material);
+    result = compute_shading(intersection_point, ray.orig, normal, i, hit_triangle.material);
     break;
   }
   case TRIANGLE_NORMALS: {
     TriangleNormals &hit_triangle = s.triangle_normals[hit_obj.index];
     specular = hit_triangle.material.specular;
     normal = interpolate_normal(hit_triangle, intersection_point);
-    result = compute_shading(intersection_point, normal, i, hit_triangle.material);
+    result = compute_shading(intersection_point, ray.orig, normal, i, hit_triangle.material);
     break;
   }
   default:
@@ -205,10 +215,10 @@ Color Render::trace(const Ray &ray, int curr_depth) {
     return result;
   }
 
-  Ray secondary_ray(intersection_point, reflect(ray.dir, normal));
+  Ray secondary_ray(intersection_point, normalize(reflect(ray.dir, normal)));
   compensate_float_rounding_error(secondary_ray, normal);
-  //result += specular * trace(secondary_ray, curr_depth);
-  result = mix_color(result, trace(secondary_ray, curr_depth), specular);
+  result += specular * trace(secondary_ray, ++curr_depth);
+  //result = mix_color(result, trace(secondary_ray, ++curr_depth), specular);
 
   return result;
 }
@@ -257,15 +267,18 @@ void Render::update() {
       } else if (event.type == sf::Event::KeyPressed &&
                  event.key.code == sf::Keyboard::F1) {
         screeshot();
+      } else if (event.type == sf::Event::KeyPressed &&
+                 event.key.code == sf::Keyboard::F2) {
+        show_debug = !show_debug;
       }
     }
     window.clear();
-    render_handling();
+    render_handling(event);
     window.display();
   }
 }
 
-void Render::render_handling() {
+void Render::render_handling(const sf::Event &event) {
   sf::Sprite sprite(texture);
 
   if (last_progress != pix_count) {
@@ -289,6 +302,10 @@ void Render::render_handling() {
     last_progress = curr_progress;
   }
 
+  if (show_debug) {
+    text.setString(std::to_string(event.mouseMove.x) + " " + std::to_string(event.mouseMove.y));
+  }
+
   texture.update(buffer.data());
   window.draw(sprite);
   window.draw(text);
@@ -307,12 +324,14 @@ int main(int argc, char *argv[]) {
 
   try {
     // Render r(read_settings(argv[1]));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\testscenes\\scene_test.test"));
 
+    //Дракон
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
 
+    //сцена
     Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
 
+    //шары
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
 
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
@@ -320,7 +339,6 @@ int main(int argc, char *argv[]) {
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
     //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
 
-    //Render r(read_settings("/home/dev/Work/github/raytrace/hw3-submissionscenes/scene6.test"));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;

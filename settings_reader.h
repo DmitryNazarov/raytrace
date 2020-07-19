@@ -185,8 +185,7 @@ Settings read_settings(const std::string& filename) {
           vec4(vertices[values[1]], 1.0f));
         t.vertices.push_back(transfstack.top() *
           vec4(vertices[values[2]], 1.0f));
-        t.normal = normalize(mat3(transpose(inverse(transfstack.top()))) *
-          cross(t.vertices[1] - t.vertices[0], t.vertices[2] - t.vertices[0]));
+        t.normal = normalize(cross(t.vertices[1] - t.vertices[0], t.vertices[2] - t.vertices[0]));
 
         t.material.ambient = ambient;
         t.material.diffuse = diffuse;

@@ -4,7 +4,7 @@
 
 TEST(trianle_tests, intersection) {
   mat4 transform = translate(mat4(1.0f), vec3(0.0f, 0.0f, -1.0f));
-  transform = rotate(transform, 60.0f, vec3(0.0f, 1.0f, 0.0f));
+  transform = rotate(transform, radians(60.0f), vec3(0.0f, 1.0f, 0.0f));
   transform = scale(transform, vec3(10.0f, 10.0f, 1.0f));
 
   Triangle t;

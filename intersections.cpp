@@ -5,44 +5,21 @@ bool intersection_sphere(const Sphere& s, const Ray& r, float& dist) {
   vec3 orig = s.inverted_transform * vec4(r.orig, 1.0f);
   vec3 dir = normalize(s.inverted_transform * vec4(r.dir, 0.0f));
 
-  // solve t * t * (r.dir * r.dir) + 2 * t * r.dir * (r.orig - i.pos) + (r.orig
-  // - i.pos) * (r.orig - i.pos) - i.radius^2 = 0;
-  float a = dot(dir, dir);
-  float b = 2 * dot(dir, (orig - s.pos));
-  float c = dot((orig - s.pos), (orig - s.pos)) - s.radius * s.radius;
-  float d = b * b - 4 * a * c;
+  // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
+  auto op = s.pos - orig;
+  auto b = dot(op, dir);
+  auto determinant = b * b - length(op)*length(op) + s.radius * s.radius;
+  if (determinant < 0)
+    return false;
 
-  if (d > 0) {
-    float sqrt_d = sqrt(d);
-    float t1 = (-b + sqrt_d) / 2 * a;
-    float t2 = (-b - sqrt_d) / 2 * a;
+  determinant = sqrt(determinant);
+  auto minus_t = b - determinant;
+  auto plus_t = b + determinant;
+  if (minus_t < 0.000000001 && plus_t < 0.000000001)
+    return false;
 
-    float t = .0f;
-
-    if (t1 < 0 || t2 < 0) {
-      t = std::max(t1, t2);
-    }
-    else {
-      t = std::min(t1, t2);
-    }
-
-    vec3 intersection_point = orig + t * dir;
-    vec3 trans_point = s.transform * vec4(intersection_point, 1.0f);
-    dist = length(trans_point - r.orig);
-
-    return true;
-  }
-  else if (d == 0) {
-    float t = -b / 2 * a;
-
-    vec3 intersection_point = orig + t * dir;
-    vec3 trans_point = s.transform * vec4(intersection_point, 1.0f);
-    dist = length(trans_point - r.orig);
-
-    return true;
-  }
-
-  return false;
+  dist = minus_t > 0.000000001 ? minus_t : plus_t;
+  return true;
 }
 
 bool intersection_triangle_BROKEN(const Triangle& tri, const Ray& r, float& dist) {
