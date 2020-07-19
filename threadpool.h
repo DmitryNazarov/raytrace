@@ -1,3 +1,6 @@
+#ifndef THREADPOOL_H
+#define THREADPOOL_H
+
 #include <condition_variable>
 #include <functional>
 #include <iostream>
@@ -19,3 +22,5 @@ private:
   std::condition_variable cv;
   bool stopped = false;
 };
+
+#endif // THREADPOOL_H

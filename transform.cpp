@@ -1,10 +1,9 @@
 #include "transform.h"
 
 namespace Transform {
-mat4 rotate(const mat4 &m, const float degrees, const vec3 &axis) {
-  float rad = radians(degrees);
-  float cos_a = cos(rad);
-  float sin_a = sin(rad);
+mat4 rotate(const mat4 &m, float radians, const vec3 &axis) {
+  float cos_a = cos(radians);
+  float sin_a = sin(radians);
 
   const float &x = axis[0];
   const float &y = axis[1];
@@ -48,11 +47,20 @@ vec3 cross(const vec3 &a, const vec3 &b) {
 }
 
 vec3 reflect(const vec3 &incident, const vec3 &normal) {
-  return incident - normal * dot(normal, incident) * 2.0f;
+  return incident - 2.0f * normal * dot(normal, incident);
 }
 
 template <> float determinant(const mat<2> &m) {
   return m[0][0] * m[1][1] - m[1][0] * m[0][1];
+}
+
+std::string debug_vector(const vec3 &v1, const vec3 &v2) {
+  std::ostringstream ss;
+  ss << "vector left: " << std::setw(4) << "\n";
+  ss << v1.x << " " << v1.y << " " << v1.z << "\n";
+  ss << "vector right: " << std::setw(4) << "\n";
+  ss << v2.x << " " << v2.y << " " << v2.z << "\n";
+  return ss.str();
 }
 
 }; // namespace Transform

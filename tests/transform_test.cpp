@@ -1,23 +1,5 @@
-#include <gtest/gtest.h>
-#include <transform.h>
+#include <test_common.h>
 
-using namespace Transform;
-
-void compare_vectors(const vec3 &v1, const vec3 &v2) {
-  ASSERT_FLOAT_EQ(v1.x, v2.x);
-  ASSERT_FLOAT_EQ(v1.y, v2.y);
-  ASSERT_FLOAT_EQ(v1.z, v2.z);
-}
-
-template <int N>
-void compare_matrices(const mat<N> &m1, const mat<N> &m2) {
-  for (int i = 0; i < N * N; ++i) {
-    int row = i % N, col = i / N;
-    ASSERT_FLOAT_EQ(m1[col][row], m2[col][row])
-        << "col: " << col << " row: " << row << std::endl
-        << debug_matrix(m1);
-  }
-}
 
 TEST(math_tests, radians) { ASSERT_FLOAT_EQ(radians(1), 0.0174533f); }
 
@@ -34,7 +16,7 @@ TEST(math_tests, normalize) {
   compare_vectors(v, vec3(0.57735026f, 0.57735026f, 0.57735026f));
 }
 
-TEST(test_group_1, dot_product_1) {
+TEST(math_tests, dot_product_1) {
   float parallel = dot(vec3(1.f, 0.f, 0.f), vec3(1.f, 0.f, 0.f));
   ASSERT_FLOAT_EQ(parallel, 1.0f);
 }

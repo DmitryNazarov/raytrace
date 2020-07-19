@@ -1,8 +1,12 @@
+#ifndef TRANSFORM_H
+#define TRANSFORM_H
+
 #include <type_traits>
 #define _USE_MATH_DEFINES
 #include <iomanip>
 #include <math.h>
 #include <sstream>
+#include <vector>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -120,13 +124,15 @@ template <int N>
     for (int j = 0; j < N; ++j) {
       ss << std::setw(4) << t[j][i] << " ";
     }
-    ss << std::endl;
+    ss << "\n";
   }
 
   return ss.str();
 }
 
-mat4 rotate(const mat4 &m, const float degrees, const vec3 &axis);
+[[nodiscard]] std::string debug_vector(const vec3 &v1, const vec3 &v2);
+
+mat4 rotate(const mat4 &m, float degrees, const vec3 &axis);
 mat4 scale(const mat4 &m, const vec3 &v);
 mat4 translate(const mat4 &m, const vec3 &v);
 vec3 normalize(const vec3 &v);
@@ -204,3 +210,6 @@ template <int N> mat<N> inverse(const mat<N> &m) {
 }
 
 }; // namespace Transform
+
+#endif // TRANSFORM_H
+
