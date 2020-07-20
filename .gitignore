@@ -12,9 +12,9 @@
 *.pch
 
 # Compiled Dynamic libraries
+*.dll
 *.so
 *.dylib
-*.dll
 
 # Fortran module files
 *.mod
@@ -33,9 +33,13 @@
 
 build-debug
 build-release
-SFML-2.5.1
 out
 googletest
 glm
 .vs
-*.ttf
+*.manifest
+*.ilk
+*.pdb
+*.txt
+*.rc
+*.res
