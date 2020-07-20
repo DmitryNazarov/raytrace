@@ -12,6 +12,7 @@
 *.pch
 
 # Compiled Dynamic libraries
+*.dll
 *.so
 *.dylib
 
@@ -32,30 +33,13 @@
 
 build-debug
 build-release
-#out
+out
 googletest
 glm
 .vs
-*.ninja*
-*.json
-CTestTestfile*
-*.log
 *.manifest
 *.ilk
 *.pdb
 *.txt
-cmake_install.cmake
 *.rc
 *.res
-out/build/x64-Release/CMakeFiles/*
-out/build/x64-Debug/CMakeFiles/*
-out/build/x64-Release/.cmake/*
-out/build/x64-Debug/.cmake/*
-out/build/x64-Release/googletest/*
-out/build/x64-Debug/googletest/*
-out/build/x64-Release/Testing/*
-out/build/x64-Debug/Testing/*
-out/build/x64-Release/lib/*
-out/build/x64-Debug/lib/*
-out/build/x64-Release/bin/*
-out/build/x64-Debug/bin/*
