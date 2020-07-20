@@ -11,9 +11,7 @@ TEST(trianle_tests, intersection) {
   t.vertices.push_back(transform * vec4(-1.0f, +1.0f, 0.0f, 1.0f));
   t.vertices.push_back(transform * vec4(-1.0f, -1.0f, 0.0f, 1.0f));
   t.vertices.push_back(transform * vec4(+1.0f, -1.0f, 0.0f, 1.0f));
-  t.normal = normalize(
-      mat3(transpose(inverse(transform))) *
-      cross(t.vertices[1] - t.vertices[0], t.vertices[2] - t.vertices[0]));
+  t.normal = normalize(cross(t.vertices[1] - t.vertices[0], t.vertices[2] - t.vertices[0]));
 
   float dist = 0.0f;
   Ray r(vec3(.0f, .0f, .0f), normalize(vec3(-0.5f, -0.5f, -1.0f)));

@@ -1,1 +1,1 @@
-# raytrace
+# Simple raytracer based on  San DiegoX: CSE167x Computer Graphics course

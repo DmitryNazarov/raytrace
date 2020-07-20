@@ -90,7 +90,7 @@ Color Render::compute_shading(const vec3 &point, const vec3& eye, const vec3 &no
 
   finalcolor += m.ambient + m.emission;
   if (finalcolor.a > 1.0f)
-    return vec4(vec3(finalcolor), 1.0f);
+    finalcolor.a = 1.0f;
   return finalcolor;
 }
 
@@ -318,27 +318,12 @@ void Render::screeshot() {
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
-    std::cout << "Enter path to scene file" << std::endl;
-    // return EXIT_FAILURE;
+    std::cout << "Usage: raytracer <path to scene file>" << std::endl;
+    return EXIT_FAILURE;
   }
 
   try {
-    // Render r(read_settings(argv[1]));
-
-    //Дракон
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene7.test"));
-
-    //сцена
-    Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene6.test"));
-
-    //шары
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene5.test"));
-
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-ambient.test"));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-diffuse.test"));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-emission.test"));
-    //Render r(read_settings("E:\\Programming\\edx_cse167\\homework_hw3\\raytrace\\hw3-submissionscenes\\scene4-specular.test"));
-
+    Render r(read_settings(argv[1]));
     r.update();
   } catch (std::exception &e) {
     std::cout << "Error:" << e.what() << std::endl;
