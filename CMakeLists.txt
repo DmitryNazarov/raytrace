@@ -39,7 +39,7 @@ target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 #Raytracer tests target
 enable_testing()
 IF (WIN32)
-  set(gtest_force_shared_crt ON)
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 ENDIF()
 add_subdirectory(googletest)
 

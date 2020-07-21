@@ -31,9 +31,7 @@
 *.out
 *.app
 
-build-debug
-build-release
-out
+build
 googletest
 glm
 .vs
