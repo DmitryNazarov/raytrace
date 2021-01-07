@@ -44,8 +44,7 @@ vec4 Render::compute_light(const vec3& direction, const vec4& lightcolor, const 
 
 Color Render::compute_shading(const vec3 &point, const vec3& eye, const vec3 &normal,
                               int obj_index, const Material &m) {
-  vec4 finalcolor = {0.0f, 0.0f, 0.0f, 1.0f};
-
+  vec4 finalcolor = m.ambient + m.emission;
   vec3 direction, half;
   vec3 eyedirn = normalize(eye - point);
 
@@ -74,7 +73,6 @@ Color Render::compute_shading(const vec3 &point, const vec3& eye, const vec3 &no
     int index = 0;
     bool is_hidden_by_other_obj = false;
     if (cast_ray(shadow_ray, hit_point, index) && obj_index != index) {
-      auto l = length(hit_point - point);
       is_hidden_by_other_obj = length(hit_point - point) < dist;
     }
 
@@ -88,7 +86,6 @@ Color Render::compute_shading(const vec3 &point, const vec3& eye, const vec3 &no
     }
   }
 
-  finalcolor += m.ambient + m.emission;
   if (finalcolor.a > 1.0f)
     finalcolor.a = 1.0f;
   return finalcolor;
@@ -192,7 +189,7 @@ Color Render::trace(const Ray &ray, int curr_depth) {
     specular = hit_sphere.material.specular;
     vec3 ip = hit_sphere.inverted_transform * vec4(intersection_point, 1.0f);
     normal = normalize(mat3(transpose(hit_sphere.inverted_transform)) * vec3(ip - hit_sphere.pos));
-    intersection_point = hit_sphere.transform * vec4(ip, 1.0f);
+    //intersection_point = hit_sphere.transform * vec4(ip, 1.0f);
     result = compute_shading(intersection_point, ray.orig, normal, i, hit_sphere.material);
     break;
   }
